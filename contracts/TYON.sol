@@ -372,6 +372,11 @@ contract TYON is Context, IERC20, Ownable {
     mapping(address => bool) private _isExcluded;
     address[] private _excluded;
 
+    address public growthX;
+    address public tyonShield;
+    address public fundMe;
+    address public ecosystemGrowth;
+
     uint256 private constant MAX = ~uint256(0);
     uint256 private _tTotal = 1000000000 * 10**6 * 10**9;
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
@@ -416,7 +421,12 @@ contract TYON is Context, IERC20, Ownable {
         inSwapAndLiquify = false;
     }
 
-    constructor() {
+    constructor(
+        address _growthX,
+        address _tyonShield,
+        address _fundMe,
+        address _ecosystemGrowth
+    ) {
         _rOwned[_msgSender()] = _rTotal;
 
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(
@@ -428,6 +438,11 @@ contract TYON is Context, IERC20, Ownable {
 
         // set the rest of the contract variables
         uniswapV2Router = _uniswapV2Router;
+
+        growthX = _growthX;
+        tyonShield = _tyonShield;
+        fundMe = _fundMe;
+        ecosystemGrowth = _ecosystemGrowth;
 
         //exclude owner and this contract from fee
         _isExcludedFromFee[owner()] = true;
