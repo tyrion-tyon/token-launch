@@ -386,17 +386,17 @@ contract TYON is Context, IERC20, Ownable {
     string private _symbol = "TYON";
     uint8 private _decimals = 9;
 
-    uint256 public _taxFee = 15;
+    uint256 public _transferTaxfee = 0;
+    uint256 public _buySellTaxFee = 1;
+
+    uint256 private _taxFee = _transferTaxfee;
     uint256 private _previousTaxFee = _taxFee;
 
     uint256 public _buySellEcosystemFee = 1;
-    uint256 private _previousBuySellEcosystemFee = _buySellEcosystemFee;
+    uint256 public _transferEcosystemFee = 4;
 
-    uint256 public _transferEcosystemFee = 3;
-    uint256 private _previousTransferEcosystemFee = 3;
-
-    uint256 public _liquidityFee = 5;
-    uint256 private _previousLiquidityFee = _liquidityFee;
+    uint256 private _ecosystemFee = _transferEcosystemFee;
+    uint256 private _previousEcosystemFee = _ecosystemFee;
 
     IUniswapV2Router02 public immutable uniswapV2Router;
     address public immutable uniswapV2Pair;
