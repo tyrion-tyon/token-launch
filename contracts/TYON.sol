@@ -621,13 +621,13 @@ contract TYON is Context, IERC20, Ownable {
             uint256 rFee,
             uint256 tTransferAmount,
             uint256 tFee,
-            uint256 tLiquidity
+            uint256 tTaxCut
         ) = _getValues(tAmount);
         _tOwned[sender] = _tOwned[sender] - (tAmount);
         _rOwned[sender] = _rOwned[sender] - (rAmount);
         _tOwned[recipient] = _tOwned[recipient] - (tTransferAmount);
         _rOwned[recipient] = _rOwned[recipient] - (rTransferAmount);
-        _takeLiquidity(tLiquidity);
+        _distributeTax(tTaxCut);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
@@ -644,8 +644,11 @@ contract TYON is Context, IERC20, Ownable {
         _taxFee = taxFee;
     }
 
-    function setLiquidityFeePercent(uint256 liquidityFee) external onlyOwner {
-        _liquidityFee = liquidityFee;
+    function setBuySellFeePercent(uint256 buySellEcosystemFee)
+        external
+        onlyOwner
+    {
+        _buySellEcosystemFee = buySellEcosystemFee;
     }
 
     function setMaxTxPercent(uint256 maxTxPercent) external onlyOwner {
@@ -677,25 +680,16 @@ contract TYON is Context, IERC20, Ownable {
             uint256
         )
     {
-        (
-            uint256 tTransferAmount,
-            uint256 tFee,
-            uint256 tLiquidity
-        ) = _getTValues(tAmount);
+        (uint256 tTransferAmount, uint256 tFee, uint256 tTaxCut) = _getTValues(
+            tAmount
+        );
         (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(
             tAmount,
             tFee,
-            tLiquidity,
+            tTaxCut,
             _getRate()
         );
-        return (
-            rAmount,
-            rTransferAmount,
-            rFee,
-            tTransferAmount,
-            tFee,
-            tLiquidity
-        );
+        return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee, tTaxCut);
     }
 
     function _getTValues(uint256 tAmount)
@@ -708,15 +702,15 @@ contract TYON is Context, IERC20, Ownable {
         )
     {
         uint256 tFee = calculateTaxFee(tAmount);
-        uint256 tLiquidity = calculateLiquidityFee(tAmount);
-        uint256 tTransferAmount = tAmount - tFee - tLiquidity;
-        return (tTransferAmount, tFee, tLiquidity);
+        uint256 tTaxCut = calculateEcosystemFee(tAmount);
+        uint256 tTransferAmount = tAmount - tFee - tTaxCut;
+        return (tTransferAmount, tFee, tTaxCut);
     }
 
     function _getRValues(
         uint256 tAmount,
         uint256 tFee,
-        uint256 tLiquidity,
+        uint256 tTaxCut,
         uint256 currentRate
     )
         private
@@ -729,8 +723,8 @@ contract TYON is Context, IERC20, Ownable {
     {
         uint256 rAmount = tAmount * (currentRate);
         uint256 rFee = tFee * (currentRate);
-        uint256 rLiquidity = tLiquidity * (currentRate);
-        uint256 rTransferAmount = rAmount - (rFee) - (rLiquidity);
+        uint256 rTaxCut = tTaxCut * (currentRate);
+        uint256 rTransferAmount = rAmount - (rFee) - (rTaxCut);
         return (rAmount, rTransferAmount, rFee);
     }
 
@@ -754,31 +748,51 @@ contract TYON is Context, IERC20, Ownable {
         return (rSupply, tSupply);
     }
 
-    function _takeLiquidity(uint256 tLiquidity) private {
+    function _distributeTax(uint256 tTaxCut) private {
         uint256 currentRate = _getRate();
-        uint256 rLiquidity = tLiquidity * (currentRate);
-        _rOwned[address(this)] = _rOwned[address(this)] + (rLiquidity);
-        if (_isExcluded[address(this)])
-            _tOwned[address(this)] = _tOwned[address(this)] + (tLiquidity);
+        uint256 tTaxCutPerWallet = tTaxCut / 4;
+        uint256 tTaxCutBalance = tTaxCut - (tTaxCutPerWallet * 3);
+        uint256 rTaxCutPerWallet = tTaxCutPerWallet * currentRate;
+        uint256 rTaxCutBalance = tTaxCutBalance * currentRate;
+        _rOwned[growthX] = _rOwned[growthX] + (rTaxCutPerWallet);
+        if (_isExcluded[growthX]) {
+            _tOwned[growthX] = _tOwned[growthX] + tTaxCutPerWallet;
+        }
+        _rOwned[fundMe] = _rOwned[fundMe] + (rTaxCutPerWallet);
+        if (_isExcluded[fundMe]) {
+            _tOwned[fundMe] = _tOwned[fundMe] + tTaxCutPerWallet;
+        }
+        _rOwned[ecosystemGrowth] =
+            _rOwned[ecosystemGrowth] +
+            (rTaxCutPerWallet);
+        if (_isExcluded[ecosystemGrowth]) {
+            _tOwned[ecosystemGrowth] =
+                _tOwned[ecosystemGrowth] +
+                tTaxCutPerWallet;
+        }
+        _rOwned[tyonShield] = _rOwned[tyonShield] + (rTaxCutBalance);
+        if (_isExcluded[tyonShield]) {
+            _tOwned[tyonShield] = _tOwned[tyonShield] + tTaxCutBalance;
+        }
     }
 
     function calculateTaxFee(uint256 _amount) private view returns (uint256) {
-        return (_amount * (_taxFee)) / (10**2);
+        return (_amount * (_taxFee)) / (10**3);
     }
 
-    function calculateLiquidityFee(uint256 _amount)
+    function calculateEcosystemFee(uint256 _amount)
         private
         view
         returns (uint256)
     {
-        return (_amount * (_liquidityFee)) / (10**2);
+        return (_amount * (_ecosystemFee)) / (10**3);
     }
 
     function removeAllFee() private {
         if (_taxFee == 0 && _buySellEcosystemFee == 0) return;
 
         _previousTaxFee = _taxFee;
-        _previousLiquidityFee = _liquidityFee;
+        _previousEcosystemFee = _ecosystemFee;
 
         _taxFee = 0;
         _buySellEcosystemFee = 0;
@@ -934,8 +948,9 @@ contract TYON is Context, IERC20, Ownable {
         uint256 amount,
         bool takeFee
     ) private {
+        if (sender == uniswapV2Pair || recipient == uniswapV2Pair)
+            enableTradingFee();
         if (!takeFee) removeAllFee();
-
         if (_isExcluded[sender] && !_isExcluded[recipient]) {
             _transferFromExcluded(sender, recipient, amount);
         } else if (!_isExcluded[sender] && _isExcluded[recipient]) {
@@ -949,6 +964,7 @@ contract TYON is Context, IERC20, Ownable {
         }
 
         if (!takeFee) restoreAllFee();
+        if (sender == uniswapV2Pair || recipient == uniswapV2Pair) disableTradingFee();
     }
 
     function _transferStandard(
@@ -962,11 +978,11 @@ contract TYON is Context, IERC20, Ownable {
             uint256 rFee,
             uint256 tTransferAmount,
             uint256 tFee,
-            uint256 tLiquidity
+            uint256 tTaxCut
         ) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender] - rAmount;
         _rOwned[recipient] = _rOwned[recipient] + (rTransferAmount);
-        _takeLiquidity(tLiquidity);
+        _distributeTax(tTaxCut);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
@@ -982,12 +998,12 @@ contract TYON is Context, IERC20, Ownable {
             uint256 rFee,
             uint256 tTransferAmount,
             uint256 tFee,
-            uint256 tLiquidity
+            uint256 tTaxCut
         ) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender] - rAmount;
         _tOwned[recipient] = _tOwned[recipient] + tTransferAmount;
         _rOwned[recipient] = _rOwned[recipient] + rTransferAmount;
-        _takeLiquidity(tLiquidity);
+        _distributeTax(tTaxCut);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
@@ -1003,12 +1019,12 @@ contract TYON is Context, IERC20, Ownable {
             uint256 rFee,
             uint256 tTransferAmount,
             uint256 tFee,
-            uint256 tLiquidity
+            uint256 tTaxCut
         ) = _getValues(tAmount);
         _tOwned[sender] = _tOwned[sender] - tAmount;
         _rOwned[sender] = _rOwned[sender] - rAmount;
         _rOwned[recipient] = _rOwned[recipient] + rTransferAmount;
-        _takeLiquidity(tLiquidity);
+        _distributeTax(tTaxCut);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
