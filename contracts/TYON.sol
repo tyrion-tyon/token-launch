@@ -775,18 +775,35 @@ contract TYON is Context, IERC20, Ownable {
     }
 
     function removeAllFee() private {
-        if (_taxFee == 0 && _liquidityFee == 0) return;
+        if (_taxFee == 0 && _buySellEcosystemFee == 0) return;
 
         _previousTaxFee = _taxFee;
         _previousLiquidityFee = _liquidityFee;
 
         _taxFee = 0;
-        _liquidityFee = 0;
+        _buySellEcosystemFee = 0;
+    }
+
+    function enableTradingFee() private {
+        if (_ecosystemFee == _buySellEcosystemFee && _taxFee == _buySellTaxFee)
+            return;
+
+        _ecosystemFee = _buySellEcosystemFee;
+        _taxFee = _buySellTaxFee;
+    }
+
+    function disableTradingFee() private {
+        if (
+            _ecosystemFee == _transferEcosystemFee && _taxFee == _transferTaxfee
+        ) return;
+
+        _ecosystemFee = _transferEcosystemFee;
+        _taxFee = _transferTaxfee;
     }
 
     function restoreAllFee() private {
         _taxFee = _previousTaxFee;
-        _liquidityFee = _previousLiquidityFee;
+        _ecosystemFee = _previousEcosystemFee;
     }
 
     function isExcludedFromFee(address account) public view returns (bool) {
