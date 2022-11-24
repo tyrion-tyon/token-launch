@@ -387,12 +387,12 @@ contract TYON is Context, IERC20, Ownable {
     uint8 private _decimals = 9;
 
     uint256 public _transferTaxfee = 0;
-    uint256 public _buySellTaxFee = 1;
+    uint256 public _buySellTaxFee = 15;
 
     uint256 private _taxFee = _transferTaxfee;
     uint256 private _previousTaxFee = _taxFee;
 
-    uint256 public _buySellEcosystemFee = 1;
+    uint256 public _buySellEcosystemFee = 10;
     uint256 public _transferEcosystemFee = 4;
 
     uint256 private _ecosystemFee = _transferEcosystemFee;
@@ -789,13 +789,13 @@ contract TYON is Context, IERC20, Ownable {
     }
 
     function removeAllFee() private {
-        if (_taxFee == 0 && _buySellEcosystemFee == 0) return;
+        if (_taxFee == 0 && _ecosystemFee == 0) return;
 
         _previousTaxFee = _taxFee;
         _previousEcosystemFee = _ecosystemFee;
 
         _taxFee = 0;
-        _buySellEcosystemFee = 0;
+        _ecosystemFee = 0;
     }
 
     function enableTradingFee() private {
