@@ -360,7 +360,7 @@ interface IUniswapV2Router02 is IUniswapV2Router01 {
     ) external;
 }
 
-contract TYON is Context, IERC20, Ownable {
+contract TYON_V1 is Context, IERC20, Ownable {
     using Address for address;
 
     mapping(address => uint256) private _rOwned;
