@@ -366,6 +366,7 @@ contract TYON_V1 is Context, IERC20, Ownable {
     mapping(address => uint256) private _rOwned;
     mapping(address => uint256) private _tOwned;
     mapping(address => mapping(address => uint256)) private _allowances;
+    mapping (address => uint8) private _badge;
 
     mapping(address => bool) private _isExcludedFromFee;
 
@@ -398,6 +399,8 @@ contract TYON_V1 is Context, IERC20, Ownable {
     uint256 private _ecosystemFee = _transferEcosystemFee;
     uint256 private _previousEcosystemFee = _ecosystemFee;
 
+    uint256 private _salePhase = 1;
+
     IUniswapV2Router02 public immutable uniswapV2Router;
     address public immutable uniswapV2Pair;
 
@@ -408,6 +411,7 @@ contract TYON_V1 is Context, IERC20, Ownable {
     uint256 private numTokensSellToAddToLiquidity = 500000 * 10**6 * 10**9;
 
     event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
+    event SalePhaseUpdated(uint8 salePhase);
     event SwapAndLiquifyEnabledUpdated(bool enabled);
     event SwapAndLiquify(
         uint256 tokensSwapped,
@@ -428,6 +432,11 @@ contract TYON_V1 is Context, IERC20, Ownable {
         address _ecosystemGrowth
     ) {
         _rOwned[_msgSender()] = _rTotal;
+        _badge[_msgSender()] = 1;
+        _badge[_growthX] = 8; //indicates no badge
+        _badge[_tyonShield] = 8;
+        _badge[_fundMe] = 8;
+        _badge[_ecosystemGrowth] = 8;
 
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(
             0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 //pancakeswap BNB testnet
@@ -470,6 +479,25 @@ contract TYON_V1 is Context, IERC20, Ownable {
     function balanceOf(address account) public view override returns (uint256) {
         if (_isExcluded[account]) return _tOwned[account];
         return tokenFromReflection(_rOwned[account]);
+    }
+
+    function getUserBadge(address _address) public view returns(string memory __badge){
+        if( _badge[_address] == 1){
+            return "MasterOfCoins";
+        }
+        if( _badge[_address] == 2){
+            return "Pods&Bronns";
+        }
+        if( _badge[_address] == 3){
+            return "Sommeliers";
+        }
+        if( _badge[_address] == 4){
+            return "Vanguards";
+        }
+        if(_badge[_address] == 5){
+            return "Freefolks";
+        }
+        return "not Applicable";
     }
 
     function transfer(address recipient, uint256 amount)
@@ -658,6 +686,11 @@ contract TYON_V1 is Context, IERC20, Ownable {
     function setSwapAndLiquifyEnabled(bool _enabled) public onlyOwner {
         swapAndLiquifyEnabled = _enabled;
         emit SwapAndLiquifyEnabledUpdated(_enabled);
+    }
+
+    function setCurrentPhase(uint8 phase) external onlyOwner {
+        _salePhase = phase;
+        emit SalePhaseUpdated(phase);
     }
 
     //to recieve ETH from uniswapV2Router when swaping
@@ -906,6 +939,8 @@ contract TYON_V1 is Context, IERC20, Ownable {
         } else {
             _transferStandard(sender, recipient, amount);
         }
+
+        if(_badge[recipient] == 0 ) _badge[recipient] == _salePhase; //assigning badge as per the sale phase
 
         if (!takeFee) restoreAllFee();
         if (sender == uniswapV2Pair || recipient == uniswapV2Pair) disableTradingFee();
