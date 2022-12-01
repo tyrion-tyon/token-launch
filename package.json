@@ -1,6 +1,36 @@
 {
   "dependencies": {
     "@openzeppelin/contracts": "^4.7.3",
-    "truffle": "^5.6.3"
-  }
+    "@truffle/hdwallet-provider": "^2.1.2",
+    "dotenv": "^16.0.3",
+    "truffle": "^5.6.3",
+    "truffle-plugin-verify": "^0.6.1"
+  },
+  "name": "token-launch",
+  "description": "Smart-contracts that issue tokens define badge levels during SEED, Private &amp; Public sale events",
+  "version": "0.0.5",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "devDependencies": {
+    "mocha": "^10.1.0"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tyrion-solutions/token-launch.git"
+  },
+  "keywords": [
+    "token",
+    "tyon"
+  ],
+  "author": "beeDev",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tyrion-solutions/token-launch/issues"
+  },
+  "homepage": "https://github.com/tyrion-solutions/token-launch#readme"
 }
