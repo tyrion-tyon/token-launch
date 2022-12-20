@@ -379,7 +379,7 @@ contract TYON_V1 is Context, IERC20, Ownable {
     address public ecosystemGrowth;
 
     uint256 private constant MAX = ~uint256(0);
-    uint256 private _tTotal = 1000000000 * 10**6 * 10**9;
+    uint256 private _tTotal = 500000000 * 10**6 * 10**9;
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
 
