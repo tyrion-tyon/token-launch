@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 // pragma solidity >=0.5.0;
 
@@ -422,12 +423,6 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl {
         uint256 tokensIntoLiqudity
     );
 
-    modifier lockTheSwap() {
-        inSwapAndLiquify = true;
-        _;
-        inSwapAndLiquify = false;
-    }
-
     constructor(
         address _growthX,
         address _tyonShield,
@@ -494,20 +489,24 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl {
         return tokenFromReflection(_rOwned[account]);
     }
 
-    function getUserBadge(address _address) public view returns(string memory __badge){
-        if( _badge[_address] == 1){
+    function getUserBadge(address _address)
+        public
+        view
+        returns (string memory __badge)
+    {
+        if (_badge[_address] == 1) {
             return "MasterOfCoins";
         }
-        if( _badge[_address] == 2){
+        if (_badge[_address] == 2) {
             return "Pods&Bronns";
         }
-        if( _badge[_address] == 3){
+        if (_badge[_address] == 3) {
             return "Sommeliers";
         }
-        if( _badge[_address] == 4){
+        if (_badge[_address] == 4) {
             return "Vanguards";
         }
-        if(_badge[_address] == 5){
+        if (_badge[_address] == 5) {
             return "Freefolks";
         }
         return "not Applicable";
@@ -958,10 +957,11 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl {
             _transferStandard(sender, recipient, amount);
         }
 
-        if(_badge[recipient] == 0 ) _badge[recipient] == _salePhase; //assigning badge as per the sale phase
+        if (_badge[recipient] == 0) _badge[recipient] == _salePhase; //assigning badge as per the sale phase
 
         if (!takeFee) restoreAllFee();
-        if (sender == uniswapV2Pair || recipient == uniswapV2Pair) disableTradingFee();
+        if (sender == uniswapV2Pair || recipient == uniswapV2Pair)
+            disableTradingFee();
     }
 
     function _transferStandard(
