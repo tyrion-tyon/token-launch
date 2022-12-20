@@ -393,8 +393,8 @@ contract TYON_V1 is Context, IERC20, Ownable {
     uint256 private _taxFee = _transferTaxfee;
     uint256 private _previousTaxFee = _taxFee;
 
-    uint256 public _buySellEcosystemFee = 10;
-    uint256 public _transferEcosystemFee = 4;
+    uint256 public _buySellEcosystemFee = 10; // actaul value 1%. *10 to acomodate value less than 1%
+    uint256 public _transferEcosystemFee = 5; // 0.5%
 
     uint256 private _ecosystemFee = _transferEcosystemFee;
     uint256 private _previousEcosystemFee = _ecosystemFee;
