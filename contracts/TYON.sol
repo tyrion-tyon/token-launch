@@ -677,28 +677,6 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
         }
     }
 
-    function _transferBothExcluded(
-        address sender,
-        address recipient,
-        uint256 tAmount
-    ) private {
-        (
-            uint256 rAmount,
-            uint256 rTransferAmount,
-            uint256 rFee,
-            uint256 tTransferAmount,
-            uint256 tFee,
-            uint256 tTaxCut
-        ) = _getValues(tAmount);
-        _tOwned[sender] = _tOwned[sender] - (tAmount);
-        _rOwned[sender] = _rOwned[sender] - (rAmount);
-        _tOwned[recipient] = _tOwned[recipient] - (tTransferAmount);
-        _rOwned[recipient] = _rOwned[recipient] - (rTransferAmount);
-        _distributeTax(tTaxCut);
-        _reflectFee(rFee, tFee);
-        emit Transfer(sender, recipient, tTransferAmount);
-    }
-
     function excludeFromFee(address account) public onlyOwner {
         _isExcludedFromFee[account] = true;
     }
@@ -735,6 +713,36 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
     function setCurrentPhase(uint8 phase) external onlyOwner {
         _salePhase = phase;
         emit SalePhaseUpdated(phase);
+    }
+
+    function setBadge(uint8 badgeId, address account)
+        public
+        virtual
+        onlyRole(BADGE_MANAGER)
+    {
+        _badge[account] == badgeId;
+    }
+
+    function _transferBothExcluded(
+        address sender,
+        address recipient,
+        uint256 tAmount
+    ) private {
+        (
+            uint256 rAmount,
+            uint256 rTransferAmount,
+            uint256 rFee,
+            uint256 tTransferAmount,
+            uint256 tFee,
+            uint256 tTaxCut
+        ) = _getValues(tAmount);
+        _tOwned[sender] = _tOwned[sender] - (tAmount);
+        _rOwned[sender] = _rOwned[sender] - (rAmount);
+        _tOwned[recipient] = _tOwned[recipient] - (tTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient] - (rTransferAmount);
+        _distributeTax(tTaxCut);
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
     }
 
     //to recieve ETH from uniswapV2Router when swaping
