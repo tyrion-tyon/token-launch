@@ -711,7 +711,8 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
     }
 
     function setCurrentPhase(uint8 phase) external onlyOwner {
-        _salePhase = phase;
+        require(phase > 0 && phase < 6, "invalid phase");
+        if (_salePhase != phase) _salePhase = phase;
         emit SalePhaseUpdated(phase);
     }
 
@@ -720,7 +721,8 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
         virtual
         onlyRole(BADGE_MANAGER)
     {
-        _badge[account] == badgeId;
+        require(badgeId > 0 && badgeId < 6, "invalid id");
+        if (_badge[account] != badgeId) _badge[account] = badgeId;
     }
 
     function _transferBothExcluded(
