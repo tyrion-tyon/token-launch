@@ -360,13 +360,13 @@ interface IUniswapV2Router02 is IUniswapV2Router01 {
     ) external;
 }
 
-contract TYON_V1 is Context, IERC20, Ownable {
+contract TYON_V1 is Context, IERC20, Ownable, AccessControl {
     using Address for address;
 
     mapping(address => uint256) private _rOwned;
     mapping(address => uint256) private _tOwned;
     mapping(address => mapping(address => uint256)) private _allowances;
-    mapping (address => uint8) private _badge;
+    mapping(address => uint8) private _badge;
 
     mapping(address => bool) private _isExcludedFromFee;
 
@@ -401,6 +401,9 @@ contract TYON_V1 is Context, IERC20, Ownable {
 
     uint256 private _salePhase = 1;
 
+    bytes32 public constant BADGE_MANAGER = keccak256("BADGE_MANAGER");
+    bytes32 public constant TAX_MANAGER = keccak256("TAX_MANAGER");
+
     IUniswapV2Router02 public immutable uniswapV2Router;
     address public immutable uniswapV2Pair;
 
@@ -431,7 +434,8 @@ contract TYON_V1 is Context, IERC20, Ownable {
         address _fundMe,
         address _ecosystemGrowth
     ) {
-        _rOwned[_msgSender()] = _rTotal;
+        _rOwned[_msgSender()] = _rTotal / 2;
+        _rOwned[_growthX] = _rTotal / 2;
         _badge[_msgSender()] = 1;
         _badge[_growthX] = 8; //indicates no badge
         _badge[_tyonShield] = 8;
@@ -453,11 +457,20 @@ contract TYON_V1 is Context, IERC20, Ownable {
         fundMe = _fundMe;
         ecosystemGrowth = _ecosystemGrowth;
 
-        //exclude owner and this contract from fee
+        //exclude owner fee wallets and this contract from fee
         _isExcludedFromFee[owner()] = true;
+        _isExcludedFromFee[_growthX] = true;
+        _isExcludedFromFee[_fundMe] = true;
+        _isExcludedFromFee[_tyonShield] = true;
+        _isExcludedFromFee[_ecosystemGrowth] = true;
         _isExcludedFromFee[address(this)] = true;
 
-        emit Transfer(address(0), _msgSender(), _tTotal);
+        _grantRole(DEFAULT_ADMIN_ROLE, owner()); //assigning owner as the default Admin of roles
+        _grantRole(BADGE_MANAGER, owner());
+        _grantRole(TAX_MANAGER, owner());
+
+        emit Transfer(address(0), _msgSender(), _tTotal / 2);
+        emit Transfer(address(0), _growthX, _tTotal / 2);
     }
 
     function name() public view returns (string memory) {
@@ -668,15 +681,20 @@ contract TYON_V1 is Context, IERC20, Ownable {
         _isExcludedFromFee[account] = false;
     }
 
-    function setTaxFeePercent(uint256 taxFee) external onlyOwner {
-        _taxFee = taxFee;
+    function setTaxFeePercent(uint256 transferTaxfee, uint256 buySellTaxFee)
+        external
+        onlyRole(TAX_MANAGER)
+    {
+        _transferTaxfee = transferTaxfee;
+        _buySellTaxFee = buySellTaxFee;
     }
 
-    function setBuySellFeePercent(uint256 buySellEcosystemFee)
-        external
-        onlyOwner
-    {
+    function setEcosystemFeePercent(
+        uint256 buySellEcosystemFee,
+        uint256 transferEcosystemFee
+    ) external onlyRole(TAX_MANAGER) {
         _buySellEcosystemFee = buySellEcosystemFee;
+        _transferEcosystemFee = transferEcosystemFee;
     }
 
     function setMaxTxPercent(uint256 maxTxPercent) external onlyOwner {
