@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
 // pragma solidity >=0.5.0;
 
@@ -361,7 +362,7 @@ interface IUniswapV2Router02 is IUniswapV2Router01 {
     ) external;
 }
 
-contract TYON_V1 is Context, IERC20, Ownable, AccessControl {
+contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
     using Address for address;
 
     mapping(address => uint256) private _rOwned;
@@ -521,6 +522,32 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl {
         return true;
     }
 
+    /**
+     * @dev Pauses the token contract.
+     *
+     * See {ERC20Pausable} and {Pausable-_pause}.
+     *
+     * Requirements:
+     *
+     * - the caller must be the owner of the contract.
+     */
+    function pause() public onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @dev Unpauses the token contract.
+     *
+     * See {ERC20Pausable} and {Pausable-_unpause}.
+     *
+     * Requirements:
+     *
+     * - the caller must be owner of the contract.
+     */
+    function unpause() public onlyOwner {
+        _unpause();
+    }
+
     function allowance(address owner, address spender)
         public
         view
@@ -587,7 +614,7 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl {
         return _tFeeTotal;
     }
 
-    function deliver(uint256 tAmount) public {
+    function deliver(uint256 tAmount) public whenNotPaused {
         address sender = _msgSender();
         require(
             !_isExcluded[sender],
@@ -890,7 +917,7 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl {
         address from,
         address to,
         uint256 amount
-    ) private {
+    ) private whenNotPaused {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
