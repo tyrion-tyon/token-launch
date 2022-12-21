@@ -410,7 +410,7 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
     address public immutable uniswapV2Pair;
 
     uint256 public _maxTxAmount = 5000000 * 10**6 * 10**9;
-    //uint256 private numTokensSellToAddToLiquidity = 500000 * 10**6 * 10**9;
+    uint256 public _minBuysellAmount = 500 * 10**9;
 
     event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
     event SalePhaseUpdated(uint8 salePhase);
@@ -707,6 +707,10 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
         _maxTxAmount = (_tTotal * (maxTxPercent)) / (10**2);
     }
 
+    function setMinBuySellAmount(uint256 minToken) external onlyOwner {
+        _minBuysellAmount = minToken * 10**9;
+    }
+
     function setCurrentPhase(uint8 phase) external onlyOwner {
         require(phase > 0 && phase < 6, "invalid phase");
         if (_salePhase != phase) _salePhase = phase;
@@ -953,8 +957,13 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
         uint256 amount,
         bool takeFee
     ) private {
-        if (sender == uniswapV2Pair || recipient == uniswapV2Pair)
+        if (sender == uniswapV2Pair || recipient == uniswapV2Pair) {
+            require(
+                amount >= _minBuysellAmount,
+                "transfer amount should be greater than minBuysellAmount"
+            );
             enableTradingFee();
+        }
         if (!takeFee) removeAllFee();
         if (_isExcluded[sender] && !_isExcluded[recipient]) {
             _transferFromExcluded(sender, recipient, amount);
