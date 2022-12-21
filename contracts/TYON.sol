@@ -409,11 +409,8 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
     IUniswapV2Router02 public immutable uniswapV2Router;
     address public immutable uniswapV2Pair;
 
-    bool inSwapAndLiquify;
-    bool public swapAndLiquifyEnabled = true;
-
     uint256 public _maxTxAmount = 5000000 * 10**6 * 10**9;
-    uint256 private numTokensSellToAddToLiquidity = 500000 * 10**6 * 10**9;
+    //uint256 private numTokensSellToAddToLiquidity = 500000 * 10**6 * 10**9;
 
     event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
     event SalePhaseUpdated(uint8 salePhase);
@@ -670,7 +667,7 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
     }
 
     function includeInReward(address account) external onlyOwner {
-        require(_isExcluded[account], "Account is already excluded");
+        require(_isExcluded[account], "Account is already included");
         for (uint256 i = 0; i < _excluded.length; i++) {
             if (_excluded[i] == account) {
                 _excluded[i] = _excluded[_excluded.length - 1];
@@ -708,11 +705,6 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
 
     function setMaxTxPercent(uint256 maxTxPercent) external onlyOwner {
         _maxTxAmount = (_tTotal * (maxTxPercent)) / (10**2);
-    }
-
-    function setSwapAndLiquifyEnabled(bool _enabled) public onlyOwner {
-        swapAndLiquifyEnabled = _enabled;
-        emit SwapAndLiquifyEnabledUpdated(_enabled);
     }
 
     function setCurrentPhase(uint8 phase) external onlyOwner {
@@ -941,29 +933,6 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
                 amount <= _maxTxAmount,
                 "Transfer amount exceeds the maxTxAmount."
             );
-
-        // is the token balance of this contract address over the min number of
-        // tokens that we need to initiate a swap + liquidity lock?
-        // also, don't get caught in a circular liquidity event.
-        // also, don't swap & liquify if sender is uniswap pair.
-        uint256 contractTokenBalance = balanceOf(address(this));
-
-        if (contractTokenBalance >= _maxTxAmount) {
-            contractTokenBalance = _maxTxAmount;
-        }
-
-        bool overMinTokenBalance = contractTokenBalance >=
-            numTokensSellToAddToLiquidity;
-        if (
-            overMinTokenBalance &&
-            !inSwapAndLiquify &&
-            from != uniswapV2Pair &&
-            swapAndLiquifyEnabled
-        ) {
-            contractTokenBalance = numTokensSellToAddToLiquidity;
-            //add liquidity
-            //swapAndLiquify(contractTokenBalance);
-        }
 
         //indicates if fee should be deducted from transfer
         bool takeFee = true;
