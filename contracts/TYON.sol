@@ -375,10 +375,10 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
     mapping(address => bool) private _isExcluded;
     address[] private _excluded;
 
-    address public growthX;
+    address public tyonGrowthX;
     address public tyonShield;
-    address public fundMe;
-    address public ecosystemGrowth;
+    address public tyonFundMe;
+    address public tyonEcosystemGrowth;
 
     uint256 private constant MAX = ~uint256(0);
     uint256 private _tTotal = 500000000 * 10**6 * 10**9;
@@ -432,11 +432,6 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
     ) {
         _rOwned[_msgSender()] = _rTotal / 2;
         _rOwned[_growthX] = _rTotal / 2;
-        _badge[_msgSender()] = 1;
-        _badge[_growthX] = 8; //indicates no badge
-        _badge[_tyonShield] = 8;
-        _badge[_fundMe] = 8;
-        _badge[_ecosystemGrowth] = 8;
 
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(
             0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 //pancakeswap BNB testnet
@@ -448,10 +443,10 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
         // set the rest of the contract variables
         uniswapV2Router = _uniswapV2Router;
 
-        growthX = _growthX;
+        tyonGrowthX = _growthX;
         tyonShield = _tyonShield;
-        fundMe = _fundMe;
-        ecosystemGrowth = _ecosystemGrowth;
+        tyonFundMe = _fundMe;
+        tyonEcosystemGrowth = _ecosystemGrowth;
 
         //exclude owner fee wallets and this contract from fee
         _isExcludedFromFee[owner()] = true;
@@ -460,6 +455,12 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
         _isExcludedFromFee[_tyonShield] = true;
         _isExcludedFromFee[_ecosystemGrowth] = true;
         _isExcludedFromFee[address(this)] = true;
+
+        _badge[_msgSender()] = 1;
+        _badge[_growthX] = 8; //indicates no badge
+        _badge[_tyonShield] = 8;
+        _badge[_fundMe] = 8;
+        _badge[_ecosystemGrowth] = 8;
 
         _grantRole(DEFAULT_ADMIN_ROLE, owner()); //assigning owner as the default Admin of roles
         _grantRole(BADGE_MANAGER, owner());
@@ -841,20 +842,20 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
         uint256 tTaxCutBalance = tTaxCut - (tTaxCutPerWallet * 3);
         uint256 rTaxCutPerWallet = tTaxCutPerWallet * currentRate;
         uint256 rTaxCutBalance = tTaxCutBalance * currentRate;
-        _rOwned[growthX] = _rOwned[growthX] + (rTaxCutPerWallet);
-        if (_isExcluded[growthX]) {
-            _tOwned[growthX] = _tOwned[growthX] + tTaxCutPerWallet;
+        _rOwned[tyonGrowthX] = _rOwned[tyonGrowthX] + (rTaxCutPerWallet);
+        if (_isExcluded[tyonGrowthX]) {
+            _tOwned[tyonGrowthX] = _tOwned[tyonGrowthX] + tTaxCutPerWallet;
         }
-        _rOwned[fundMe] = _rOwned[fundMe] + (rTaxCutPerWallet);
-        if (_isExcluded[fundMe]) {
-            _tOwned[fundMe] = _tOwned[fundMe] + tTaxCutPerWallet;
+        _rOwned[tyonFundMe] = _rOwned[tyonFundMe] + (rTaxCutPerWallet);
+        if (_isExcluded[tyonFundMe]) {
+            _tOwned[tyonFundMe] = _tOwned[tyonFundMe] + tTaxCutPerWallet;
         }
-        _rOwned[ecosystemGrowth] =
-            _rOwned[ecosystemGrowth] +
+        _rOwned[tyonEcosystemGrowth] =
+            _rOwned[tyonEcosystemGrowth] +
             (rTaxCutPerWallet);
-        if (_isExcluded[ecosystemGrowth]) {
-            _tOwned[ecosystemGrowth] =
-                _tOwned[ecosystemGrowth] +
+        if (_isExcluded[tyonEcosystemGrowth]) {
+            _tOwned[tyonEcosystemGrowth] =
+                _tOwned[tyonEcosystemGrowth] +
                 tTaxCutPerWallet;
         }
         _rOwned[tyonShield] = _rOwned[tyonShield] + (rTaxCutBalance);
