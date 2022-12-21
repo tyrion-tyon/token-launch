@@ -466,6 +466,10 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
         _grantRole(BADGE_MANAGER, owner());
         _grantRole(TAX_MANAGER, owner());
 
+        // exclude owner and growthX from reward.
+        excludeFromReward(owner());
+        excludeFromReward(_growthX);
+
         emit Transfer(address(0), _msgSender(), _tTotal / 2);
         emit Transfer(address(0), _growthX, _tTotal / 2);
     }
