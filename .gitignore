@@ -1,5 +1,13 @@
 node_modules
+
+# secret keys
 .secret
+
 package-lock.json
 build
+
+#environment variables
 .env
+
+#vscode configs
+.vscode

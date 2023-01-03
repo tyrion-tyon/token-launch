@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: Unlicensed
 
-pragma solidity ^0.8.9;
+pragma solidity 0.8.9;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 // pragma solidity >=0.5.0;
 
@@ -362,8 +361,13 @@ interface IUniswapV2Router02 is IUniswapV2Router01 {
     ) external;
 }
 
-contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
-    using Address for address;
+contract TYON_V1 is
+    IERC20Upgradeable,
+    AccessControlUpgradeable,
+    OwnableUpgradeable,
+    PausableUpgradeable
+{
+    using AddressUpgradeable for address;
 
     mapping(address => uint256) private _rOwned;
     mapping(address => uint256) private _tOwned;
@@ -381,36 +385,36 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
     address public tyonEcosystemGrowth;
 
     uint256 private constant MAX = ~uint256(0);
-    uint256 private _tTotal = 500000000 * 10**6 * 10**9;
-    uint256 private _rTotal = (MAX - (MAX % _tTotal));
+    uint256 private _tTotal;
+    uint256 private _rTotal;
     uint256 private _tFeeTotal;
 
-    string private _name = "TYON";
-    string private _symbol = "TYON";
-    uint8 private _decimals = 9;
+    string private _name;
+    string private _symbol;
+    uint8 private _decimals;
 
-    uint256 public _transferTaxfee = 0;
-    uint256 public _buySellTaxFee = 15;
+    uint256 public _transferTaxfee;
+    uint256 public _buySellTaxFee;
 
     uint256 private _taxFee = _transferTaxfee;
     uint256 private _previousTaxFee = _taxFee;
 
-    uint256 public _buySellEcosystemFee = 10; // actaul value 1%. *10 to acomodate value less than 1%
-    uint256 public _transferEcosystemFee = 5; // 0.5%
+    uint256 public _buySellEcosystemFee;
+    uint256 public _transferEcosystemFee;
 
-    uint256 private _ecosystemFee = _transferEcosystemFee;
-    uint256 private _previousEcosystemFee = _ecosystemFee;
+    uint256 private _ecosystemFee;
+    uint256 private _previousEcosystemFee;
 
-    uint256 private _salePhase = 1;
+    uint256 private _salePhase;
 
     bytes32 public constant BADGE_MANAGER = keccak256("BADGE_MANAGER");
     bytes32 public constant TAX_MANAGER = keccak256("TAX_MANAGER");
 
-    IUniswapV2Router02 public immutable uniswapV2Router;
-    address public immutable uniswapV2Pair;
+    IUniswapV2Router02 public uniswapV2Router;
+    address public uniswapV2Pair;
 
-    uint256 public _maxTxAmount = 5000000 * 10**6 * 10**9;
-    uint256 public _minBuysellAmount = 500 * 10**9;
+    uint256 public _maxTxAmount;
+    uint256 public _minBuysellAmount;
 
     event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
     event SalePhaseUpdated(uint8 salePhase);
@@ -421,14 +425,59 @@ contract TYON_V1 is Context, IERC20, Ownable, AccessControl, Pausable {
         uint256 tokensIntoLiqudity
     );
 
-    constructor(
+    // prevent intialization of logic contract.
+    constructor() initializer {}
+
+    function __TYON_V1_init(
         address _growthX,
         address _tyonShield,
         address _fundMe,
         address _ecosystemGrowth
-    ) {
+    ) public initializer {
+        __Context_init_unchained();
+        __Ownable_init_unchained();
+        __Pausable_init_unchained();
+        __AccessControl_init_unchained();
+        __TYON_V1_init_unchained(
+            _growthX,
+            _tyonShield,
+            _fundMe,
+            _ecosystemGrowth
+        );
+    }
+
+    function __TYON_V1_init_unchained(
+        address _growthX,
+        address _tyonShield,
+        address _fundMe,
+        address _ecosystemGrowth
+    ) public onlyInitializing {
+        _name = "TYON";
+        _symbol = "TYON";
+        _decimals = 9;
+        
+        _tTotal = 500000000 * 10**6 * 10**9;
+        _rTotal = (MAX - (MAX % _tTotal));
+
         _rOwned[_msgSender()] = _rTotal / 2;
         _rOwned[_growthX] = _rTotal / 2;
+
+        _transferTaxfee = 0;
+        _buySellTaxFee = 15;
+
+        _taxFee = _transferTaxfee;
+        _previousTaxFee = _taxFee;
+
+        _buySellEcosystemFee = 10; // actaul value 1%. *10 to acomodate value less than 1%
+        _transferEcosystemFee = 5; // 0.5%
+
+        _ecosystemFee = _transferEcosystemFee;
+        _previousEcosystemFee = _ecosystemFee;
+
+        _salePhase = 1;
+
+        _maxTxAmount = 5000000 * 10**6 * 10**9;
+        _minBuysellAmount = 500 * 10**9;
 
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(
             0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 //pancakeswap BNB testnet
