@@ -396,8 +396,8 @@ contract TYON_V1 is
     uint256 public _transferTaxfee;
     uint256 public _buySellTaxFee;
 
-    uint256 private _taxFee = _transferTaxfee;
-    uint256 private _previousTaxFee = _taxFee;
+    uint256 private _taxFee;
+    uint256 private _previousTaxFee;
 
     uint256 public _buySellEcosystemFee;
     uint256 public _transferEcosystemFee;
@@ -426,9 +426,9 @@ contract TYON_V1 is
     );
 
     // prevent intialization of logic contract.
-    constructor() initializer {}
+    // constructor() initializer {}
 
-    function __TYON_V1_init(
+    function initialize(
         address _growthX,
         address _tyonShield,
         address _fundMe,
@@ -455,7 +455,7 @@ contract TYON_V1 is
         _name = "TYON";
         _symbol = "TYON";
         _decimals = 9;
-        
+
         _tTotal = 500000000 * 10**6 * 10**9;
         _rTotal = (MAX - (MAX % _tTotal));
 

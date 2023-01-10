@@ -2,6 +2,7 @@ node_modules
 
 # secret keys
 .secret
+.secret.dev
 
 package-lock.json
 build
@@ -11,3 +12,5 @@ build
 
 #vscode configs
 .vscode
+
+.openzeppelin
