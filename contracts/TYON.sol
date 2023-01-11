@@ -451,7 +451,7 @@ contract TYON_V1 is
         address _tyonShield,
         address _fundMe,
         address _ecosystemGrowth
-    ) public onlyInitializing {
+    ) internal onlyInitializing {
         _name = "TYON";
         _symbol = "TYON";
         _decimals = 9;
