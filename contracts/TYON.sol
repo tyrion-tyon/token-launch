@@ -370,37 +370,20 @@ contract TYON_V1 is
     mapping(address => mapping(address => uint256)) private _allowances;
     mapping(address => uint8) private _badge;
     mapping(address => bool) private _isExcludedFromFee;
-
     mapping(address => bool) private _isExcluded;
-    address[] private _excluded;
 
     address public tyonGrowthX;
     address public tyonShield;
     address public tyonFundMe;
     address public tyonEcosystemGrowth;
 
-    uint256 private constant MAX = ~uint256(0);
-    uint256 private _tTotal;
-    uint256 private _rTotal;
-    uint256 private _tFeeTotal;
-
-    string private _name;
-    string private _symbol;
-    uint8 private _decimals;
-
     uint256 public _transferTaxfee;
     uint256 public _buySellTaxFee;
-
-    uint256 private _taxFee;
-    uint256 private _previousTaxFee;
-
     uint256 public _buySellEcosystemFee;
     uint256 public _transferEcosystemFee;
 
-    uint256 private _ecosystemFee;
-    uint256 private _previousEcosystemFee;
-
-    uint256 private _salePhase;
+    uint256 public _maxTxAmount;
+    uint256 public _minBuysellAmount;
 
     bytes32 public constant BADGE_MANAGER = keccak256("BADGE_MANAGER");
     bytes32 public constant TAX_MANAGER = keccak256("TAX_MANAGER");
@@ -408,8 +391,23 @@ contract TYON_V1 is
     IUniswapV2Router02 public uniswapV2Router;
     address public uniswapV2Pair;
 
-    uint256 public _maxTxAmount;
-    uint256 public _minBuysellAmount;
+    string private _name;
+    string private _symbol;
+    uint8 private _decimals;
+
+    uint256 private _tTotal;
+    uint256 private _rTotal;
+    uint256 private _tFeeTotal;
+
+    uint256 private _taxFee;
+    uint256 private _previousTaxFee;
+    uint256 private _ecosystemFee;
+    uint256 private _previousEcosystemFee;
+
+    uint256 private _salePhase;
+
+    uint256 private constant MAX = ~uint256(0);
+    address[] private _excluded;
 
     event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
     event SalePhaseUpdated(uint8 salePhase);
