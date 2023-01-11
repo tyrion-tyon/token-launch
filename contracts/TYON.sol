@@ -9,7 +9,6 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 // pragma solidity >=0.5.0;
-
 interface IUniswapV2Factory {
     event PairCreated(
         address indexed token0,
@@ -41,7 +40,6 @@ interface IUniswapV2Factory {
 }
 
 // pragma solidity >=0.5.0;
-
 interface IUniswapV2Pair {
     event Approval(
         address indexed owner,
@@ -152,7 +150,6 @@ interface IUniswapV2Pair {
 }
 
 // pragma solidity >=0.6.2;
-
 interface IUniswapV2Router01 {
     function factory() external pure returns (address);
 
@@ -313,7 +310,6 @@ interface IUniswapV2Router01 {
 }
 
 // pragma solidity >=0.6.2;
-
 interface IUniswapV2Router02 is IUniswapV2Router01 {
     function removeLiquidityETHSupportingFeeOnTransferTokens(
         address token,
@@ -373,7 +369,6 @@ contract TYON_V1 is
     mapping(address => uint256) private _tOwned;
     mapping(address => mapping(address => uint256)) private _allowances;
     mapping(address => uint8) private _badge;
-
     mapping(address => bool) private _isExcludedFromFee;
 
     mapping(address => bool) private _isExcluded;
@@ -426,7 +421,8 @@ contract TYON_V1 is
     );
 
     // prevent intialization of logic contract.
-    // constructor() initializer {}
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {}
 
     function initialize(
         address _growthX,
@@ -479,15 +475,15 @@ contract TYON_V1 is
         _maxTxAmount = 5000000 * 10**6 * 10**9;
         _minBuysellAmount = 500 * 10**9;
 
-        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(
-            0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 //pancakeswap BNB testnet
-        );
+        // IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(
+        //     0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 //pancakeswap BNB testnet
+        // );
         // Create a uniswap pair for this new token
-        uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
-            .createPair(address(this), _uniswapV2Router.WETH());
+        uniswapV2Pair = 0x1947CeF08E9B7D8eE1a27a804B8ace5B9db11b19; //IUniswapV2Factory(_uniswapV2Router.factory())
+        //     .createPair(address(this), _uniswapV2Router.WETH());
 
-        // set the rest of the contract variables
-        uniswapV2Router = _uniswapV2Router;
+        // // set the rest of the contract variables
+        //uniswapV2Router = _uniswapV2Router;
 
         tyonGrowthX = _growthX;
         tyonShield = _tyonShield;
@@ -520,29 +516,118 @@ contract TYON_V1 is
         emit Transfer(address(0), _growthX, _tTotal / 2);
     }
 
-    function name() public view returns (string memory) {
+    //to recieve ETH from uniswapV2Router when swaping
+    receive() external payable {}
+
+    function setTaxFeePercent(uint256 transferTaxfee, uint256 buySellTaxFee)
+        external
+        onlyRole(TAX_MANAGER)
+    {
+        _transferTaxfee = transferTaxfee;
+        _buySellTaxFee = buySellTaxFee;
+    }
+
+    function setEcosystemFeePercent(
+        uint256 buySellEcosystemFee,
+        uint256 transferEcosystemFee
+    ) external onlyRole(TAX_MANAGER) {
+        _buySellEcosystemFee = buySellEcosystemFee;
+        _transferEcosystemFee = transferEcosystemFee;
+    }
+
+    function setMaxTxPercent(uint256 maxTxPercent) external onlyOwner {
+        _maxTxAmount = (_tTotal * (maxTxPercent)) / (10**2);
+    }
+
+    function setMinBuySellAmount(uint256 minToken) external onlyOwner {
+        _minBuysellAmount = minToken * 10**9;
+    }
+
+    function setCurrentPhase(uint8 phase) external onlyOwner {
+        require(phase > 0 && phase < 6, "invalid phase");
+        if (_salePhase != phase) _salePhase = phase;
+        emit SalePhaseUpdated(phase);
+    }
+
+    function setBadge(uint8 badgeId, address account)
+        external
+        virtual
+        onlyRole(BADGE_MANAGER)
+    {
+        require(badgeId > 0 && badgeId < 6, "invalid id");
+        if (_badge[account] != badgeId) _badge[account] = badgeId;
+    }
+
+    /**
+     * @dev Pauses the token contract.
+     *
+     * See {ERC20Pausable} and {Pausable-_pause}.
+     *
+     * Requirements:
+     *
+     * - the caller must be the owner of the contract.
+     */
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @dev Unpauses the token contract.
+     *
+     * See {ERC20Pausable} and {Pausable-_unpause}.
+     *
+     * Requirements:
+     *
+     * - the caller must be owner of the contract.
+     */
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    function deliver(uint256 tAmount) external whenNotPaused {
+        address sender = _msgSender();
+        require(
+            !_isExcluded[sender],
+            "Excluded addresses cannot call this function"
+        );
+        (uint256 rAmount, , , , , ) = _getValues(tAmount);
+        _rOwned[sender] = _rOwned[sender] - (rAmount);
+        _rTotal = _rTotal - (rAmount);
+        _tFeeTotal = _tFeeTotal + (tAmount);
+    }
+
+    function name() external view returns (string memory) {
         return _name;
     }
 
-    function symbol() public view returns (string memory) {
+    function symbol() external view returns (string memory) {
         return _symbol;
     }
 
-    function decimals() public view returns (uint8) {
+    function decimals() external view returns (uint8) {
         return _decimals;
     }
 
-    function totalSupply() public view override returns (uint256) {
+    function totalSupply() external view override returns (uint256) {
         return _tTotal;
     }
 
-    function balanceOf(address account) public view override returns (uint256) {
+    function totalFees() external view returns (uint256) {
+        return _tFeeTotal;
+    }
+
+    function balanceOf(address account)
+        external
+        view
+        override
+        returns (uint256)
+    {
         if (_isExcluded[account]) return _tOwned[account];
         return tokenFromReflection(_rOwned[account]);
     }
 
     function getUserBadge(address _address)
-        public
+        external
         view
         returns (string memory __badge)
     {
@@ -564,39 +649,15 @@ contract TYON_V1 is
         return "not Applicable";
     }
 
+    // public functions
     function transfer(address recipient, uint256 amount)
         public
+        virtual
         override
         returns (bool)
     {
         _transfer(_msgSender(), recipient, amount);
         return true;
-    }
-
-    /**
-     * @dev Pauses the token contract.
-     *
-     * See {ERC20Pausable} and {Pausable-_pause}.
-     *
-     * Requirements:
-     *
-     * - the caller must be the owner of the contract.
-     */
-    function pause() public onlyOwner {
-        _pause();
-    }
-
-    /**
-     * @dev Unpauses the token contract.
-     *
-     * See {ERC20Pausable} and {Pausable-_unpause}.
-     *
-     * Requirements:
-     *
-     * - the caller must be owner of the contract.
-     */
-    function unpause() public onlyOwner {
-        _unpause();
     }
 
     function allowance(address owner, address spender)
@@ -621,7 +682,7 @@ contract TYON_V1 is
         address sender,
         address recipient,
         uint256 amount
-    ) public override returns (bool) {
+    ) public virtual override returns (bool) {
         _transfer(sender, recipient, amount);
         _approve(
             sender,
@@ -659,22 +720,6 @@ contract TYON_V1 is
 
     function isExcludedFromReward(address account) public view returns (bool) {
         return _isExcluded[account];
-    }
-
-    function totalFees() public view returns (uint256) {
-        return _tFeeTotal;
-    }
-
-    function deliver(uint256 tAmount) public whenNotPaused {
-        address sender = _msgSender();
-        require(
-            !_isExcluded[sender],
-            "Excluded addresses cannot call this function"
-        );
-        (uint256 rAmount, , , , , ) = _getValues(tAmount);
-        _rOwned[sender] = _rOwned[sender] - (rAmount);
-        _rTotal = _rTotal - (rAmount);
-        _tFeeTotal = _tFeeTotal + (tAmount);
     }
 
     function reflectionFromToken(uint256 tAmount, bool deductTransferFee)
@@ -715,7 +760,7 @@ contract TYON_V1 is
         _excluded.push(account);
     }
 
-    function includeInReward(address account) external onlyOwner {
+    function includeInReward(address account) public onlyOwner {
         require(_isExcluded[account], "Account is already included");
         for (uint256 i = 0; i < _excluded.length; i++) {
             if (_excluded[i] == account) {
@@ -734,45 +779,6 @@ contract TYON_V1 is
 
     function includeInFee(address account) public onlyOwner {
         _isExcludedFromFee[account] = false;
-    }
-
-    function setTaxFeePercent(uint256 transferTaxfee, uint256 buySellTaxFee)
-        external
-        onlyRole(TAX_MANAGER)
-    {
-        _transferTaxfee = transferTaxfee;
-        _buySellTaxFee = buySellTaxFee;
-    }
-
-    function setEcosystemFeePercent(
-        uint256 buySellEcosystemFee,
-        uint256 transferEcosystemFee
-    ) external onlyRole(TAX_MANAGER) {
-        _buySellEcosystemFee = buySellEcosystemFee;
-        _transferEcosystemFee = transferEcosystemFee;
-    }
-
-    function setMaxTxPercent(uint256 maxTxPercent) external onlyOwner {
-        _maxTxAmount = (_tTotal * (maxTxPercent)) / (10**2);
-    }
-
-    function setMinBuySellAmount(uint256 minToken) external onlyOwner {
-        _minBuysellAmount = minToken * 10**9;
-    }
-
-    function setCurrentPhase(uint8 phase) external onlyOwner {
-        require(phase > 0 && phase < 6, "invalid phase");
-        if (_salePhase != phase) _salePhase = phase;
-        emit SalePhaseUpdated(phase);
-    }
-
-    function setBadge(uint8 badgeId, address account)
-        public
-        virtual
-        onlyRole(BADGE_MANAGER)
-    {
-        require(badgeId > 0 && badgeId < 6, "invalid id");
-        if (_badge[account] != badgeId) _badge[account] = badgeId;
     }
 
     function _transferBothExcluded(
@@ -796,9 +802,6 @@ contract TYON_V1 is
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
-
-    //to recieve ETH from uniswapV2Router when swaping
-    receive() external payable {}
 
     function _reflectFee(uint256 rFee, uint256 tFee) private {
         _rTotal = _rTotal - (rFee);
