@@ -22,7 +22,7 @@ require("dotenv").config();
 const HDWalletProvider = require("@truffle/hdwallet-provider");
 const fs = require("fs");
 const mnemonic = fs.readFileSync(".secret").toString().trim();
-const binanceTestnetSeed = "https://data-seed-prebsc-1-s1.binance.org:8545";
+const binanceTestnetSeed = "https://bsc-testnet.public.blastapi.io";
 
 module.exports = {
   /**
