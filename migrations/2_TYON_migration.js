@@ -13,6 +13,11 @@ module.exports = async function (deployer) {
     ],
     { deployer }
   );
+//   await instance.transferOwnership(
+//     "0xcF872915E9187Ef676d8fFA83f9bc4E46b0293Cf"
+//   );
+//   const owner = await instance.owner();
+//   console.log("new owner:", owner);
 };
 
 // module.exports = async function (deployer) {
