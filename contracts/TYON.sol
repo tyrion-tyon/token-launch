@@ -772,10 +772,18 @@ contract TYON_V1 is
     }
 
     function excludeFromFee(address account) public onlyOwner {
+        require(
+            _isExcludedFromFee[account] == false,
+            "account already excluded"
+        );
         _isExcludedFromFee[account] = true;
     }
 
     function includeInFee(address account) public onlyOwner {
+        require(
+            _isExcludedFromFee[account] == true,
+            "account already included"
+        );
         _isExcludedFromFee[account] = false;
     }
 
