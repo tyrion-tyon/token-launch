@@ -371,6 +371,7 @@ contract TYON_V1 is
     mapping(address => uint8) private _badge;
     mapping(address => bool) private _isExcludedFromFee;
     mapping(address => bool) private _isExcluded;
+    mapping(address => bool) private _isLP;
 
     address public tyonGrowthX;
     address public tyonShield;
@@ -404,7 +405,7 @@ contract TYON_V1 is
     uint256 private _ecosystemFee;
     uint256 private _previousEcosystemFee;
 
-    uint256 private _salePhase;
+    uint8 private _salePhase;
 
     uint256 private constant MAX = ~uint256(0);
     address[] private _excluded;
@@ -444,7 +445,7 @@ contract TYON_V1 is
         _symbol = "TYON";
         _decimals = 9;
 
-        _tTotal = 500000000 * 10**6 * 10**9;
+        _tTotal = 500000000 * 10**9;
         _rTotal = (MAX - (MAX % _tTotal));
 
         _rOwned[_msgSender()] = _rTotal / 2;
@@ -464,18 +465,19 @@ contract TYON_V1 is
 
         _salePhase = 1;
 
-        _maxTxAmount = 5000000 * 10**6 * 10**9;
+        _maxTxAmount = 5000000 * 10**9;
         _minBuysellAmount = 500 * 10**9;
 
         // IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(
         //     0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 //pancakeswap BNB testnet
         // );
         // Create a uniswap pair for this new token
-        uniswapV2Pair = 0x1947CeF08E9B7D8eE1a27a804B8ace5B9db11b19; //IUniswapV2Factory(_uniswapV2Router.factory())
+        // uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
         //     .createPair(address(this), _uniswapV2Router.WETH());
 
         // // set the rest of the contract variables
-        //uniswapV2Router = _uniswapV2Router;
+        // uniswapV2Router = _uniswapV2Router;
+        // _isLP[uniswapV2Pair] = true;
 
         tyonGrowthX = _growthX;
         tyonShield = _tyonShield;
@@ -495,6 +497,7 @@ contract TYON_V1 is
         _badge[_tyonShield] = 8;
         _badge[_fundMe] = 8;
         _badge[_ecosystemGrowth] = 8;
+        _badge[uniswapV2Pair] = 8;
 
         _grantRole(DEFAULT_ADMIN_ROLE, owner()); //assigning owner as the default Admin of roles
         _grantRole(BADGE_MANAGER, owner());
@@ -513,6 +516,7 @@ contract TYON_V1 is
 
     function setTaxFeePercent(uint256 transferTaxfee, uint256 buySellTaxFee)
         external
+        virtual
         onlyRole(TAX_MANAGER)
     {
         _transferTaxfee = transferTaxfee;
@@ -522,31 +526,32 @@ contract TYON_V1 is
     function setEcosystemFeePercent(
         uint256 buySellEcosystemFee,
         uint256 transferEcosystemFee
-    ) external onlyRole(TAX_MANAGER) {
+    ) external virtual onlyRole(TAX_MANAGER) {
         _buySellEcosystemFee = buySellEcosystemFee;
         _transferEcosystemFee = transferEcosystemFee;
     }
 
-    function setMaxTxPercent(uint256 maxTxPercent) external onlyOwner {
+    function setMaxTxPercent(uint256 maxTxPercent) external virtual onlyOwner {
+        require(maxTxPercent > 0 && maxTxPercent < 100, "invalid value");
         _maxTxAmount = (_tTotal * (maxTxPercent)) / (10**2);
     }
 
-    function setMinBuySellAmount(uint256 minToken) external onlyOwner {
+    function setMinBuySellAmount(uint256 minToken) external virtual onlyOwner {
         _minBuysellAmount = minToken * 10**9;
     }
 
-    function setCurrentPhase(uint8 phase) external onlyOwner {
-        require(phase > 0 && phase < 6, "invalid phase");
+    function setCurrentPhase(uint8 phase) external virtual onlyOwner {
+        require(phase > 0 && phase < 7, "invalid phase");
         if (_salePhase != phase) _salePhase = phase;
         emit SalePhaseUpdated(phase);
     }
 
-    function setBadge(uint8 badgeId, address account)
+    function setBadge(address account, uint8 badgeId)
         external
         virtual
         onlyRole(BADGE_MANAGER)
     {
-        require(badgeId > 0 && badgeId < 6, "invalid id");
+        require(badgeId > 0 && badgeId < 7, "invalid id");
         if (_badge[account] != badgeId) _badge[account] = badgeId;
     }
 
@@ -559,7 +564,7 @@ contract TYON_V1 is
      *
      * - the caller must be the owner of the contract.
      */
-    function pause() external onlyOwner {
+    function pause() external virtual onlyOwner {
         _pause();
     }
 
@@ -572,7 +577,7 @@ contract TYON_V1 is
      *
      * - the caller must be owner of the contract.
      */
-    function unpause() external onlyOwner {
+    function unpause() external virtual onlyOwner {
         _unpause();
     }
 
@@ -611,6 +616,7 @@ contract TYON_V1 is
     function balanceOf(address account)
         external
         view
+        virtual
         override
         returns (uint256)
     {
@@ -621,6 +627,7 @@ contract TYON_V1 is
     function getUserBadge(address _address)
         external
         view
+        virtual
         returns (string memory __badge)
     {
         if (_badge[_address] == 1) {
@@ -636,12 +643,25 @@ contract TYON_V1 is
             return "Vanguards";
         }
         if (_badge[_address] == 5) {
-            return "Freefolks";
+            return "Westermen";
+        }
+        if (_badge[_address] == 6) {
+            return "Khalasaris";
         }
         return "not Applicable";
     }
 
     // public functions
+    function setLPAddress(address account) public virtual onlyOwner {
+        require(!_isLP[account], "account already added");
+        _isLP[account] = true;
+    }
+
+    function removeLPAddress(address account) public virtual onlyOwner {
+        require(_isLP[account], "account already removed");
+        _isLP[account] = false;
+    }
+
     function transfer(address recipient, uint256 amount)
         public
         virtual
@@ -1009,7 +1029,7 @@ contract TYON_V1 is
         uint256 amount,
         bool takeFee
     ) private {
-        if (sender == uniswapV2Pair || recipient == uniswapV2Pair) {
+        if (_isLP[sender] || _isLP[recipient]) {
             require(
                 amount >= _minBuysellAmount,
                 "transfer amount should be greater than minBuysellAmount"
@@ -1029,7 +1049,7 @@ contract TYON_V1 is
             _transferStandard(sender, recipient, amount);
         }
 
-        if (_badge[recipient] == 0) _badge[recipient] == _salePhase; //assigning badge as per the sale phase
+        if (_badge[recipient] == 0) _badge[recipient] = _salePhase; //assigning badge as per the sale phase
 
         if (!takeFee) restoreAllFee();
         if (sender == uniswapV2Pair || recipient == uniswapV2Pair)
