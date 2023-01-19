@@ -52,7 +52,7 @@ contract("TYON_V1 TEST", (accounts) => {
     assert.equal(decimal, 9, "getting decimal failed");
     assert.equal(
       totalSupply,
-      500000000 * 10 ** 6 * 10 ** 9,
+      500000000 * 10 ** 9,
       "getting total supply failed"
     );
 
@@ -93,11 +93,7 @@ contract("TYON_V1 TEST", (accounts) => {
     );
 
     // tx amounts
-    assert.equal(
-      _maxTxAmount,
-      5000000 * 10 ** 6 * 10 ** 9,
-      "_maxTxAmount tax fee error"
-    );
+    assert.equal(_maxTxAmount, 5000000 * 10 ** 9, "_maxTxAmount tax fee error");
     assert.equal(_minBuysellAmount, 500 * 10 ** 9, "_minBuysellAmount error");
 
     // badge test
@@ -107,7 +103,7 @@ contract("TYON_V1 TEST", (accounts) => {
     //total fees
     assert.equal(totalFees, 0, "totalFees error");
   });
-  it("should equally distribute total supply between owner and growtX", async () => {
+  it("should equally distribute total supply between owner and growthX", async () => {
     const ownerBalance = await tyon.balanceOf(accounts[0]);
     const growthXBalance = await tyon.balanceOf(TYON_V1_CONFIG._growthX);
     const totalSupply = await tyon.totalSupply();
@@ -142,5 +138,172 @@ contract("TYON_V1 TEST", (accounts) => {
         "VM Exception while processing transaction: revert Ownable: caller is not the owner"
       );
     }
+  });
+  it("allow owner to transfer token without deductinge cosystem fee", async () => {
+    await tyon.transfer(accounts[1], web3.utils.toWei("1000", "gwei"));
+    const ownerBalance = await tyon.balanceOf(accounts[0]);
+    const user1Balance = await tyon.balanceOf(accounts[1]);
+    assert.equal(web3.utils.fromWei(ownerBalance, "gwei"), 249999000);
+    assert.equal(web3.utils.fromWei(user1Balance, "gwei"), 1000);
+  });
+  it("allows user to user transfer with deducting ecosystem fee", async () => {
+    await tyon.transfer(accounts[2], web3.utils.toWei("100", "gwei"), {
+      from: accounts[1],
+    });
+    await tyon.transfer(accounts[1], web3.utils.toWei("50", "gwei"), {
+      from: accounts[2],
+    });
+    const user2Balance = await tyon.balanceOf(accounts[2]);
+    const user1Balance = await tyon.balanceOf(accounts[1]);
+    assert.equal(web3.utils.fromWei(user1Balance, "gwei"), 949.75);
+    assert.equal(web3.utils.fromWei(user2Balance, "gwei"), 49.5);
+  });
+  it("transfers all deducted fees to Ecosystem wallets", async () => {
+    const ecosystemGrowthBalance = await tyon.balanceOf(
+      TYON_V1_CONFIG._ecosystemGrowth
+    );
+    const fundMeBalance = await tyon.balanceOf(TYON_V1_CONFIG._fundMe);
+    const growthXBalance = await tyon.balanceOf(TYON_V1_CONFIG._growthX);
+    const tyonShieldBalance = await tyon.balanceOf(TYON_V1_CONFIG._tyonShield);
+    assert.equal(web3.utils.fromWei(ecosystemGrowthBalance, "gwei"), 0.1875);
+    assert.equal(web3.utils.fromWei(fundMeBalance, "gwei"), 0.1875);
+    assert.equal(web3.utils.fromWei(growthXBalance, "gwei"), 250000000.1875);
+    assert.equal(web3.utils.fromWei(tyonShieldBalance, "gwei"), 0.1875);
+  });
+  it("allows user to transfer token to a fee excluded account without deducting ecosystem fee", async () => {
+    await tyon.transfer(accounts[0], web3.utils.toWei("100", "gwei"), {
+      from: accounts[1],
+    });
+    const ownerBalance = await tyon.balanceOf(accounts[0]);
+    const user1Balance = await tyon.balanceOf(accounts[1]);
+    assert.equal(web3.utils.fromWei(user1Balance, "gwei"), 849.75);
+    assert.equal(web3.utils.fromWei(ownerBalance, "gwei"), 249999100);
+  });
+  it("allows ownerto set Liquid Pool address", async () => {
+    await tyon.setLPAddress(accounts[9]);
+    assert.ok(true);
+  });
+  it("allows user to transfer token to LP with deducting fee and tax", async () => {
+    await tyon.transfer(accounts[9], web3.utils.toWei("600", "gwei"), {
+      from: accounts[1],
+    });
+    const user1Balance = await tyon.balanceOf(accounts[1]);
+    const LPBalance = await tyon.balanceOf(accounts[9]);
+
+    assert.equal(web3.utils.fromWei(user1Balance, "gwei"), 252.277514231); // balance includes reflection
+    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 590.920303605);
+  });
+  it("fail if transfer/sell amount is less than minBuysellAmount", async () => {
+    try {
+      await tyon.transfer(accounts[9], web3.utils.toWei("10", "gwei"), {
+        from: accounts[1],
+      });
+      assert.fail("minBuysellAmount transfer test failed");
+    } catch (error) {
+      assert.strictEqual(
+        error.message,
+        "VM Exception while processing transaction: revert transfer amount should be greater than minBuysellAmount"
+      );
+    }
+  });
+  it("allows user to buy token from LP with deducting fee and tax", async () => {
+    await tyon.transfer(accounts[2], web3.utils.toWei("550", "gwei"), {
+      from: accounts[9],
+    });
+    const user2Balance = await tyon.balanceOf(accounts[2]);
+    const LPBalance = await tyon.balanceOf(accounts[9]);
+    assert.equal(web3.utils.fromWei(user2Balance, "gwei"), 591.693323422); // balance includes reflection
+    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 41.300181239);
+  });
+  it("allows user to sell token to LP with deducting fee and tax", async () => {
+    await tyon.transfer(accounts[9], web3.utils.toWei("500", "gwei"), {
+      from: accounts[2],
+    });
+    const user2Balance = await tyon.balanceOf(accounts[2]);
+    const LPBalance = await tyon.balanceOf(accounts[9]);
+    assert.equal(web3.utils.fromWei(user2Balance, "gwei"), 92.467596789); // balance includes reflection
+    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 533.265456149);
+  });
+  it("assign all holders with badge", async () => {
+    const holdersBadge = await tyon.getUserBadge(accounts[2]);
+    const nonHoldersBadge = await tyon.getUserBadge(accounts[4]);
+    assert.equal(holdersBadge, "MasterOfCoins");
+    assert.equal(nonHoldersBadge, "not Applicable");
+  });
+  it("allows owner to set sale phase", async () => {
+    const phase = await tyon.setCurrentPhase(2);
+    const event = phase.logs.find((obj) => obj.event == "SalePhaseUpdated");
+    const { salePhase } = event.args;
+    assert.equal(salePhase, 2);
+  });
+  it("assign all holders with badge according to sale phase", async () => {
+    const holdersBadge = await tyon.getUserBadge(accounts[2]);
+    const nonHoldersBadge = await tyon.getUserBadge(accounts[3]);
+    await tyon.transfer(accounts[3], 1000);
+    const updatedBadge = await tyon.getUserBadge(accounts[3]);
+    assert.equal(holdersBadge, "MasterOfCoins");
+    assert.equal(nonHoldersBadge, "not Applicable");
+    assert.equal(updatedBadge, "Pods&Bronns");
+  });
+  it("allows owner to change holders badge", async () => {
+    const holdersBadge = await tyon.getUserBadge(accounts[3]);
+    await tyon.setBadge(accounts[3], 3);
+    const updatedBadge = await tyon.getUserBadge(accounts[3]);
+    assert.equal(holdersBadge, "Pods&Bronns");
+    assert.equal(updatedBadge, "Sommeliers");
+  });
+  it("owner can grant new BADGE MANAGER role", async () => {
+    const BADGE_MANAGER = await tyon.BADGE_MANAGER();
+    const hasRoleFalse = await tyon.hasRole(BADGE_MANAGER, accounts[1]);
+    await tyon.grantRole(BADGE_MANAGER, accounts[1]);
+    const hasRoleTrue = await tyon.hasRole(BADGE_MANAGER, accounts[1]);
+    assert.equal(hasRoleFalse, false);
+    assert.equal(hasRoleTrue, true);
+  });
+  it("allows BADGE MANAGER to change holders badge", async () => {
+    const holdersBadge = await tyon.getUserBadge(accounts[3]);
+    await tyon.setBadge(accounts[3], 2, { from: accounts[1] });
+    const updatedBadge = await tyon.getUserBadge(accounts[3]);
+    assert.equal(updatedBadge, "Pods&Bronns");
+    assert.equal(holdersBadge, "Sommeliers");
+  });
+  it("fail if setBadge by anyone other than BADGE MANAGER", async () => {
+    const BADGE_MANAGER = await tyon.BADGE_MANAGER();
+    try {
+      await tyon.setBadge(accounts[3], 2, { from: accounts[2] });
+      assert.fail("setBadge test failed");
+    } catch (error) {
+      assert.strictEqual(
+        error.message,
+        `VM Exception while processing transaction: revert AccessControl: account ${accounts[2].toLowerCase()} is missing role ${BADGE_MANAGER}`
+      );
+    }
+  });
+  it("fail if setCurrentPhase by anyone other than owner", async () => {
+    try {
+      await tyon.setCurrentPhase(2, { from: accounts[1] });
+      assert.fail("setCurrentPhase test failed");
+    } catch (error) {
+      assert.strictEqual(
+        error.message,
+        "VM Exception while processing transaction: revert Ownable: caller is not the owner"
+      );
+    }
+  });
+  it("fail if owner set invalid phase", async () => {
+    try {
+      await tyon.setCurrentPhase(7);
+      assert.fail("setCurrentPhase test failed");
+    } catch (error) {
+      assert.strictEqual(
+        error.message,
+        "VM Exception while processing transaction: revert invalid phase"
+      );
+    }
+  });
+  it("allows owner to set _maxTxAmount", async () => {
+    await tyon.setMaxTxPercent(10);
+    const _maxTxAmount = await tyon._maxTxAmount();
+    assert.equal(web3.utils.fromWei(_maxTxAmount, "gwei"), 50000000);
   });
 });
