@@ -411,12 +411,6 @@ contract TYON_V1 is
 
     event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
     event SalePhaseUpdated(uint8 salePhase);
-    event SwapAndLiquifyEnabledUpdated(bool enabled);
-    event SwapAndLiquify(
-        uint256 tokensSwapped,
-        uint256 ethReceived,
-        uint256 tokensIntoLiqudity
-    );
 
     // prevent intialization of logic contract.
     /// @custom:oz-upgrades-unsafe-allow constructor
