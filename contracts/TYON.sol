@@ -801,28 +801,6 @@ contract TYON_V1 is
         _isExcludedFromFee[account] = false;
     }
 
-    function _transferBothExcluded(
-        address sender,
-        address recipient,
-        uint256 tAmount
-    ) private {
-        (
-            uint256 rAmount,
-            uint256 rTransferAmount,
-            uint256 rFee,
-            uint256 tTransferAmount,
-            uint256 tFee,
-            uint256 tTaxCut
-        ) = _getValues(tAmount);
-        _tOwned[sender] = _tOwned[sender] - (tAmount);
-        _rOwned[sender] = _rOwned[sender] - (rAmount);
-        _tOwned[recipient] = _tOwned[recipient] - (tTransferAmount);
-        _rOwned[recipient] = _rOwned[recipient] - (rTransferAmount);
-        _distributeTax(tTaxCut);
-        _reflectFee(rFee, tFee);
-        emit Transfer(sender, recipient, tTransferAmount);
-    }
-
     function _reflectFee(uint256 rFee, uint256 tFee) private {
         _rTotal = _rTotal - (rFee);
         _tFeeTotal = _tFeeTotal + (tFee);
@@ -1071,6 +1049,28 @@ contract TYON_V1 is
         ) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender] - rAmount;
         _rOwned[recipient] = _rOwned[recipient] + (rTransferAmount);
+        _distributeTax(tTaxCut);
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
+    }
+
+    function _transferBothExcluded(
+        address sender,
+        address recipient,
+        uint256 tAmount
+    ) private {
+        (
+            uint256 rAmount,
+            uint256 rTransferAmount,
+            uint256 rFee,
+            uint256 tTransferAmount,
+            uint256 tFee,
+            uint256 tTaxCut
+        ) = _getValues(tAmount);
+        _tOwned[sender] = _tOwned[sender] - (tAmount);
+        _rOwned[sender] = _rOwned[sender] - (rAmount);
+        _tOwned[recipient] = _tOwned[recipient] - (tTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient] - (rTransferAmount);
         _distributeTax(tTaxCut);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);

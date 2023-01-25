@@ -306,4 +306,47 @@ contract("TYON_V1 TEST", (accounts) => {
     const _maxTxAmount = await tyon._maxTxAmount();
     assert.equal(web3.utils.fromWei(_maxTxAmount, "gwei"), 50000000);
   });
+  it("allows owner to set setTaxFeePercent", async () => {
+    await tyon.setTaxFeePercent(10, 20);
+    const _transferTaxfee = await tyon._transferTaxfee();
+    const _buySellTaxFee = await tyon._buySellTaxFee();
+    assert.equal(_transferTaxfee, 10);
+    assert.equal(_buySellTaxFee, 20);
+  });
+  it("owner can grant new TAX MANAGER role", async () => {
+    const TAX_MANAGER = await tyon.TAX_MANAGER();
+    const hasRoleFalse = await tyon.hasRole(TAX_MANAGER, accounts[3]);
+    await tyon.grantRole(TAX_MANAGER, accounts[3]);
+    const hasRoleTrue = await tyon.hasRole(TAX_MANAGER, accounts[3]);
+    assert.equal(hasRoleFalse, false);
+    assert.equal(hasRoleTrue, true);
+  });
+  it("allows TAX_MANAGER to change tax fee", async () => {
+    await tyon.setTaxFeePercent(0, 15, {
+      from: accounts[3],
+    });
+    const _transferTaxfee = await tyon._transferTaxfee();
+    const _buySellTaxFee = await tyon._buySellTaxFee();
+    assert.equal(_transferTaxfee, 0);
+    assert.equal(_buySellTaxFee, 15);
+  });
+  it("fail if setTaxFeePercent by anyone other than TAX MANAGER", async () => {
+    const TAX_MANAGER = await tyon.TAX_MANAGER();
+    try {
+      await tyon.setTaxFeePercent(0, 15, {
+        from: accounts[2],
+      });
+      assert.fail("setBadge test failed");
+    } catch (error) {
+      assert.strictEqual(
+        error.message,
+        `VM Exception while processing transaction: revert AccessControl: account ${accounts[2].toLowerCase()} is missing role ${TAX_MANAGER}`
+      );
+    }
+  });
+  it("allows to calculate tokensFrom reflection and reflection from token ", async () => {
+    const ref = await tyon.reflectionFromToken(100000000000, false);
+    const token = await tyon.tokenFromReflection(ref);
+    assert.equal(token.toString(), 100000000000);
+  });
 });
