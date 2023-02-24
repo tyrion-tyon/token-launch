@@ -365,13 +365,13 @@ contract TYON_V1 is
 {
     using AddressUpgradeable for address;
 
-    mapping(address => uint256) private _rOwned;
-    mapping(address => uint256) private _tOwned;
-    mapping(address => mapping(address => uint256)) private _allowances;
-    mapping(address => uint8) private _badge;
-    mapping(address => bool) private _isExcludedFromFee;
-    mapping(address => bool) private _isExcluded;
-    mapping(address => bool) private _isLP;
+    mapping(address => uint256) internal _rOwned;
+    mapping(address => uint256) internal _tOwned;
+    mapping(address => mapping(address => uint256)) internal _allowances;
+    mapping(address => uint8) internal _badge;
+    mapping(address => bool) internal _isExcludedFromFee;
+    mapping(address => bool) internal _isExcluded;
+    mapping(address => bool) internal _isLP;
 
     address public tyonGrowthX;
     address public tyonShield;
@@ -396,19 +396,19 @@ contract TYON_V1 is
     string private _symbol;
     uint8 private _decimals;
 
-    uint256 private _tTotal;
-    uint256 private _rTotal;
-    uint256 private _tFeeTotal;
+    uint256 internal _tTotal;
+    uint256 internal _rTotal;
+    uint256 internal _tFeeTotal;
 
-    uint256 private _taxFee;
-    uint256 private _previousTaxFee;
-    uint256 private _ecosystemFee;
-    uint256 private _previousEcosystemFee;
+    uint256 internal _taxFee;
+    uint256 internal _previousTaxFee;
+    uint256 internal _ecosystemFee;
+    uint256 internal _previousEcosystemFee;
 
-    uint8 private _salePhase;
+    uint8 internal _salePhase;
 
     uint256 private constant MAX = ~uint256(0);
-    address[] private _excluded;
+    address[] internal _excluded;
 
     event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
     event SalePhaseUpdated(uint8 salePhase);
@@ -807,7 +807,7 @@ contract TYON_V1 is
     }
 
     function _getValues(uint256 tAmount)
-        private
+        internal
         view
         returns (
             uint256,
@@ -831,7 +831,7 @@ contract TYON_V1 is
     }
 
     function _getTValues(uint256 tAmount)
-        private
+        internal
         view
         returns (
             uint256,
@@ -851,7 +851,7 @@ contract TYON_V1 is
         uint256 tTaxCut,
         uint256 currentRate
     )
-        private
+        internal
         pure
         returns (
             uint256,
@@ -866,12 +866,12 @@ contract TYON_V1 is
         return (rAmount, rTransferAmount, rFee);
     }
 
-    function _getRate() private view returns (uint256) {
+    function _getRate() internal view returns (uint256) {
         (uint256 rSupply, uint256 tSupply) = _getCurrentSupply();
         return rSupply / (tSupply);
     }
 
-    function _getCurrentSupply() private view returns (uint256, uint256) {
+    function _getCurrentSupply() internal view returns (uint256, uint256) {
         uint256 rSupply = _rTotal;
         uint256 tSupply = _tTotal;
         for (uint256 i = 0; i < _excluded.length; i++) {
@@ -886,7 +886,7 @@ contract TYON_V1 is
         return (rSupply, tSupply);
     }
 
-    function _distributeTax(uint256 tTaxCut) private {
+    function _distributeTax(uint256 tTaxCut) internal {
         uint256 currentRate = _getRate();
         uint256 tTaxCutPerWallet = tTaxCut / 4;
         uint256 tTaxCutBalance = tTaxCut - (tTaxCutPerWallet * 3);
@@ -914,19 +914,19 @@ contract TYON_V1 is
         }
     }
 
-    function calculateTaxFee(uint256 _amount) private view returns (uint256) {
+    function calculateTaxFee(uint256 _amount) internal view returns (uint256) {
         return (_amount * (_taxFee)) / (10**3);
     }
 
     function calculateEcosystemFee(uint256 _amount)
-        private
+        internal
         view
         returns (uint256)
     {
         return (_amount * (_ecosystemFee)) / (10**3);
     }
 
-    function removeAllFee() private {
+    function removeAllFee() internal {
         if (_taxFee == 0 && _ecosystemFee == 0) return;
 
         _previousTaxFee = _taxFee;
@@ -936,7 +936,7 @@ contract TYON_V1 is
         _ecosystemFee = 0;
     }
 
-    function enableTradingFee() private {
+    function enableTradingFee() internal {
         if (_ecosystemFee == _buySellEcosystemFee && _taxFee == _buySellTaxFee)
             return;
 
@@ -944,7 +944,7 @@ contract TYON_V1 is
         _taxFee = _buySellTaxFee;
     }
 
-    function disableTradingFee() private {
+    function disableTradingFee() internal {
         if (
             _ecosystemFee == _transferEcosystemFee && _taxFee == _transferTaxfee
         ) return;
@@ -953,7 +953,7 @@ contract TYON_V1 is
         _taxFee = _transferTaxfee;
     }
 
-    function restoreAllFee() private {
+    function restoreAllFee() internal {
         _taxFee = _previousTaxFee;
         _ecosystemFee = _previousEcosystemFee;
     }
@@ -966,7 +966,7 @@ contract TYON_V1 is
         address owner,
         address spender,
         uint256 amount
-    ) private {
+    ) internal {
         require(owner != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
 
@@ -978,7 +978,7 @@ contract TYON_V1 is
         address from,
         address to,
         uint256 amount
-    ) private whenNotPaused {
+    ) internal whenNotPaused {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
@@ -1006,7 +1006,7 @@ contract TYON_V1 is
         address recipient,
         uint256 amount,
         bool takeFee
-    ) private {
+    ) internal {
         if (_isLP[sender] || _isLP[recipient]) {
             require(
                 amount >= _minBuysellAmount,
@@ -1038,7 +1038,7 @@ contract TYON_V1 is
         address sender,
         address recipient,
         uint256 tAmount
-    ) private {
+    ) internal {
         (
             uint256 rAmount,
             uint256 rTransferAmount,
@@ -1058,7 +1058,7 @@ contract TYON_V1 is
         address sender,
         address recipient,
         uint256 tAmount
-    ) private {
+    ) internal {
         (
             uint256 rAmount,
             uint256 rTransferAmount,
@@ -1080,7 +1080,7 @@ contract TYON_V1 is
         address sender,
         address recipient,
         uint256 tAmount
-    ) private {
+    ) internal {
         (
             uint256 rAmount,
             uint256 rTransferAmount,
@@ -1101,7 +1101,7 @@ contract TYON_V1 is
         address sender,
         address recipient,
         uint256 tAmount
-    ) private {
+    ) internal {
         (
             uint256 rAmount,
             uint256 rTransferAmount,
