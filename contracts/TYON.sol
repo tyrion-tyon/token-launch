@@ -620,8 +620,7 @@ contract TYON_V1 is
         override
         returns (uint256)
     {
-        if (_isExcluded[account]) return _tOwned[account];
-        return tokenFromReflection(_rOwned[account]);
+        return _balanceOf(account);
     }
 
     function getUserBadge(address _address)
@@ -801,7 +800,17 @@ contract TYON_V1 is
         _isExcludedFromFee[account] = false;
     }
 
-    function _reflectFee(uint256 rFee, uint256 tFee) private {
+    function _balanceOf(address account)
+        internal
+        view
+        virtual
+        returns (uint256)
+    {
+        if (_isExcluded[account]) return _tOwned[account];
+        return tokenFromReflection(_rOwned[account]);
+    }
+
+    function _reflectFee(uint256 rFee, uint256 tFee) internal virtual {
         _rTotal = _rTotal - (rFee);
         _tFeeTotal = _tFeeTotal + (tFee);
     }
