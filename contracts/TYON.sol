@@ -421,7 +421,8 @@ contract TYON_V1 is
         address _growthX,
         address _tyonShield,
         address _fundMe,
-        address _ecosystemGrowth
+        address _ecosystemGrowth,
+        address _growthXWallet
     ) public initializer {
         __Context_init_unchained();
         __Ownable_init_unchained();
@@ -431,7 +432,8 @@ contract TYON_V1 is
             _growthX,
             _tyonShield,
             _fundMe,
-            _ecosystemGrowth
+            _ecosystemGrowth,
+            _growthXWallet
         );
     }
 
@@ -439,7 +441,8 @@ contract TYON_V1 is
         address _growthX,
         address _tyonShield,
         address _fundMe,
-        address _ecosystemGrowth
+        address _ecosystemGrowth,
+        address _growthXWallet
     ) internal onlyInitializing {
         _name = "TYON";
         _symbol = "TYON";
@@ -449,7 +452,7 @@ contract TYON_V1 is
         _rTotal = (MAX - (MAX % _tTotal));
 
         _rOwned[_msgSender()] = _rTotal / 2;
-        _rOwned[_growthX] = _rTotal / 2;
+        _rOwned[_growthXWallet] = _rTotal / 2;
 
         _transferTaxfee = 0;
         _buySellTaxFee = 15;
@@ -483,6 +486,7 @@ contract TYON_V1 is
         tyonShield = _tyonShield;
         tyonFundMe = _fundMe;
         tyonEcosystemGrowth = _ecosystemGrowth;
+        growthXWallet = _growthXWallet;
 
         //exclude owner fee wallets and this contract from fee
         _isExcludedFromFee[owner()] = true;
@@ -490,6 +494,7 @@ contract TYON_V1 is
         _isExcludedFromFee[_fundMe] = true;
         _isExcludedFromFee[_tyonShield] = true;
         _isExcludedFromFee[_ecosystemGrowth] = true;
+        _isExcludedFromFee[_growthXWallet] = true;
         _isExcludedFromFee[address(this)] = true;
 
         _badge[_msgSender()] = 1;
@@ -497,6 +502,7 @@ contract TYON_V1 is
         _badge[_tyonShield] = 8;
         _badge[_fundMe] = 8;
         _badge[_ecosystemGrowth] = 8;
+        _badge[_growthXWallet] = 8;
         _badge[uniswapV2Pair] = 8;
 
         _grantRole(DEFAULT_ADMIN_ROLE, owner()); //assigning owner as the default Admin of roles
@@ -505,10 +511,10 @@ contract TYON_V1 is
 
         // exclude owner and growthX from reward.
         excludeFromReward(owner());
-        excludeFromReward(_growthX);
+        excludeFromReward(_growthXWallet);
 
         emit Transfer(address(0), _msgSender(), _tTotal / 2);
-        emit Transfer(address(0), _growthX, _tTotal / 2);
+        emit Transfer(address(0), _growthXWallet, _tTotal / 2);
     }
 
     //to recieve ETH from uniswapV2Router when swaping
