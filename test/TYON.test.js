@@ -16,13 +16,14 @@ contract("TYON_V1 TEST", (accounts) => {
         TYON_V1_CONFIG._growthX,
         TYON_V1_CONFIG._tyonShield,
         TYON_V1_CONFIG._fundMe,
-        TYON_V1_CONFIG._ecosystemGrowth
+        TYON_V1_CONFIG._ecosystemGrowth,
+        TYON_V1_CONFIG._growthxWallet
       );
       assert.fail("contract initialised again");
     } catch (error) {
       assert.strictEqual(
         error.message,
-        "VM Exception while processing transaction: revert Initializable: contract is already initialized",
+        "VM Exception while processing transaction: revert Initializable: contract is already initialized -- Reason given: Initializable: contract is already initialized.",
         "re initialize error message mismatch "
       );
     }
@@ -36,6 +37,7 @@ contract("TYON_V1 TEST", (accounts) => {
     const tyonShield = await tyon.tyonShield();
     const tyonFundMe = await tyon.tyonFundMe();
     const tyonEcosystemGrowth = await tyon.tyonEcosystemGrowth();
+    const growthXWallet = await tyon.growthXWallet();
     const _transferTaxfee = await tyon._transferTaxfee();
     const _buySellTaxFee = await tyon._buySellTaxFee();
     const _buySellEcosystemFee = await tyon._buySellEcosystemFee();
@@ -43,7 +45,7 @@ contract("TYON_V1 TEST", (accounts) => {
     const _maxTxAmount = await tyon._maxTxAmount();
     const _minBuysellAmount = await tyon._minBuysellAmount();
     const ownerBadge = await tyon.getUserBadge(accounts[0]);
-    const walletBadge = await tyon.getUserBadge(TYON_V1_CONFIG._growthX);
+    const walletBadge = await tyon.getUserBadge(TYON_V1_CONFIG._growthxWallet);
 
     const totalFees = await tyon.totalFees();
     //test for token data
@@ -105,7 +107,7 @@ contract("TYON_V1 TEST", (accounts) => {
   });
   it("should equally distribute total supply between owner and growthX", async () => {
     const ownerBalance = await tyon.balanceOf(accounts[0]);
-    const growthXBalance = await tyon.balanceOf(TYON_V1_CONFIG._growthX);
+    const growthXBalance = await tyon.balanceOf(TYON_V1_CONFIG._growthxWallet);
     const totalSupply = await tyon.totalSupply();
     assert.equal(ownerBalance, totalSupply / 2, "ownerBalance error");
     assert.equal(growthXBalance, totalSupply / 2, "growthXBalance error");
@@ -135,7 +137,7 @@ contract("TYON_V1 TEST", (accounts) => {
     } catch (error) {
       assert.strictEqual(
         error.message,
-        "VM Exception while processing transaction: revert Ownable: caller is not the owner"
+        "VM Exception while processing transaction: revert Ownable: caller is not the owner -- Reason given: Ownable: caller is not the owner."
       );
     }
   });
@@ -167,7 +169,7 @@ contract("TYON_V1 TEST", (accounts) => {
     const tyonShieldBalance = await tyon.balanceOf(TYON_V1_CONFIG._tyonShield);
     assert.equal(web3.utils.fromWei(ecosystemGrowthBalance, "gwei"), 0.1875);
     assert.equal(web3.utils.fromWei(fundMeBalance, "gwei"), 0.1875);
-    assert.equal(web3.utils.fromWei(growthXBalance, "gwei"), 250000000.1875);
+    assert.equal(web3.utils.fromWei(growthXBalance, "gwei"), 0.1875);
     assert.equal(web3.utils.fromWei(tyonShieldBalance, "gwei"), 0.1875);
   });
   it("allows user to transfer token to a fee excluded account without deducting ecosystem fee", async () => {
@@ -190,8 +192,8 @@ contract("TYON_V1 TEST", (accounts) => {
     const user1Balance = await tyon.balanceOf(accounts[1]);
     const LPBalance = await tyon.balanceOf(accounts[9]);
 
-    assert.equal(web3.utils.fromWei(user1Balance, "gwei"), 252.277514231); // balance includes reflection
-    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 590.920303605);
+    assert.equal(web3.utils.fromWei(user1Balance, "gwei"), 252.272727272); // balance includes reflection
+    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 590.909090909);
   });
   it("fail if transfer/sell amount is less than minBuysellAmount", async () => {
     try {
@@ -202,7 +204,7 @@ contract("TYON_V1 TEST", (accounts) => {
     } catch (error) {
       assert.strictEqual(
         error.message,
-        "VM Exception while processing transaction: revert transfer amount should be greater than minBuysellAmount"
+        "VM Exception while processing transaction: revert transfer amount should be greater than minBuysellAmount -- Reason given: transfer amount should be greater than minBuysellAmount."
       );
     }
   });
@@ -212,8 +214,8 @@ contract("TYON_V1 TEST", (accounts) => {
     });
     const user2Balance = await tyon.balanceOf(accounts[2]);
     const LPBalance = await tyon.balanceOf(accounts[9]);
-    assert.equal(web3.utils.fromWei(user2Balance, "gwei"), 591.693323422); // balance includes reflection
-    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 41.300181239);
+    assert.equal(web3.utils.fromWei(user2Balance, "gwei"), 591.673675357); // balance includes reflection
+    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 41.287560211);
   });
   it("allows user to sell token to LP with deducting fee and tax", async () => {
     await tyon.transfer(accounts[9], web3.utils.toWei("500", "gwei"), {
@@ -221,8 +223,8 @@ contract("TYON_V1 TEST", (accounts) => {
     });
     const user2Balance = await tyon.balanceOf(accounts[2]);
     const LPBalance = await tyon.balanceOf(accounts[9]);
-    assert.equal(web3.utils.fromWei(user2Balance, "gwei"), 92.467596789); // balance includes reflection
-    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 533.265456149);
+    assert.equal(web3.utils.fromWei(user2Balance, "gwei"), 92.444042377); // balance includes reflection
+    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 533.231153153);
   });
   it("assign all holders with badge", async () => {
     const holdersBadge = await tyon.getUserBadge(accounts[2]);
@@ -275,7 +277,7 @@ contract("TYON_V1 TEST", (accounts) => {
     } catch (error) {
       assert.strictEqual(
         error.message,
-        `VM Exception while processing transaction: revert AccessControl: account ${accounts[2].toLowerCase()} is missing role ${BADGE_MANAGER}`
+        `VM Exception while processing transaction: revert AccessControl: account ${accounts[2].toLowerCase()} is missing role ${BADGE_MANAGER} -- Reason given: AccessControl: account ${accounts[2].toLowerCase()} is missing role ${BADGE_MANAGER}.`
       );
     }
   });
@@ -286,7 +288,7 @@ contract("TYON_V1 TEST", (accounts) => {
     } catch (error) {
       assert.strictEqual(
         error.message,
-        "VM Exception while processing transaction: revert Ownable: caller is not the owner"
+        "VM Exception while processing transaction: revert Ownable: caller is not the owner -- Reason given: Ownable: caller is not the owner."
       );
     }
   });
@@ -297,7 +299,7 @@ contract("TYON_V1 TEST", (accounts) => {
     } catch (error) {
       assert.strictEqual(
         error.message,
-        "VM Exception while processing transaction: revert invalid phase"
+        "VM Exception while processing transaction: revert invalid phase -- Reason given: invalid phase."
       );
     }
   });
@@ -340,7 +342,7 @@ contract("TYON_V1 TEST", (accounts) => {
     } catch (error) {
       assert.strictEqual(
         error.message,
-        `VM Exception while processing transaction: revert AccessControl: account ${accounts[2].toLowerCase()} is missing role ${TAX_MANAGER}`
+        `VM Exception while processing transaction: revert AccessControl: account ${accounts[2].toLowerCase()} is missing role ${TAX_MANAGER} -- Reason given: AccessControl: account ${accounts[2].toLowerCase()} is missing role ${TAX_MANAGER}.`
       );
     }
   });
@@ -348,5 +350,20 @@ contract("TYON_V1 TEST", (accounts) => {
     const ref = await tyon.reflectionFromToken(100000000000, false);
     const token = await tyon.tokenFromReflection(ref);
     assert.equal(token.toString(), 100000000000);
+  });
+  it("allows spender to transfer allowed token", async () => {
+    await tyon.approve(accounts[3], web3.utils.toWei("10", "gwei"), {
+      from: accounts[2],
+    });
+    await tyon.transferFrom(
+      accounts[2],
+      accounts[4],
+      web3.utils.toWei("10", "gwei"),
+      {
+        from: accounts[3],
+      }
+    );
+    const user4Balance = await tyon.balanceOf(accounts[4]);
+    assert.equal(user4Balance.toString(), 9950000000);
   });
 });
