@@ -404,6 +404,7 @@ contract TYON_V1 is
     uint256 internal _previousTaxFee;
     uint256 internal _ecosystemFee;
     uint256 internal _previousEcosystemFee;
+    bool internal _tradeFeeEnabled;
 
     uint8 internal _salePhase;
 
@@ -463,6 +464,7 @@ contract TYON_V1 is
         _buySellEcosystemFee = 10; // actaul value 1%. *10 to acomodate value less than 1%
         _transferEcosystemFee = 5; // 0.5%
 
+        _tradeFeeEnabled = false;
         _ecosystemFee = _transferEcosystemFee;
         _previousEcosystemFee = _ecosystemFee;
 
@@ -973,6 +975,7 @@ contract TYON_V1 is
 
         _ecosystemFee = _buySellEcosystemFee;
         _taxFee = _buySellTaxFee;
+        _tradeFeeEnabled = true;
     }
 
     function disableTradingFee() internal {
@@ -1061,8 +1064,7 @@ contract TYON_V1 is
         if (_badge[recipient] == 0) _badge[recipient] = _salePhase; //assigning badge as per the sale phase
 
         if (!takeFee) restoreAllFee();
-        if (sender == uniswapV2Pair || recipient == uniswapV2Pair)
-            disableTradingFee();
+        if (_tradeFeeEnabled) disableTradingFee();
     }
 
     function _transferStandard(
