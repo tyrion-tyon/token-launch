@@ -562,6 +562,22 @@ contract TYON_V1 is
     }
 
     /**
+     * @dev function to withdraw ERC20 tokens trapped on smartcontract.
+     * @param amount amount of token reuired to withdraw.
+     * @param token addres of the ERC20 token smartcontract
+        - the caller must be the owner of the contract
+     */
+
+    function withdrawToken(uint256 amount, address token)
+        external
+        virtual
+        onlyOwner
+    {
+        IERC20Upgradeable ERC20Token = IERC20Upgradeable(token);
+        ERC20Token.safeTransfer(owner(), amount);
+    }
+
+    /**
      * @dev Pauses the token contract.
      *
      * See {ERC20Pausable} and {Pausable-_pause}.
