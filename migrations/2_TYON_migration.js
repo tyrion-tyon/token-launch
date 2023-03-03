@@ -10,6 +10,7 @@ module.exports = async function (deployer) {
       TYON_V1_CONFIG._tyonShield,
       TYON_V1_CONFIG._fundMe,
       TYON_V1_CONFIG._ecosystemGrowth,
+      TYON_V1_CONFIG._growthxWallet
     ],
     { deployer }
   );
