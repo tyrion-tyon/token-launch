@@ -3,7 +3,8 @@
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+//import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/Utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -364,6 +365,7 @@ contract TYON_V1 is
     PausableUpgradeable
 {
     using AddressUpgradeable for address;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     mapping(address => uint256) internal _rOwned;
     mapping(address => uint256) internal _tOwned;
@@ -373,19 +375,25 @@ contract TYON_V1 is
     mapping(address => bool) internal _isExcluded;
     mapping(address => bool) internal _isLP;
 
+    // Ecosystem Wallets
     address public tyonGrowthX;
     address public tyonShield;
     address public tyonFundMe;
     address public tyonEcosystemGrowth;
 
+    // Fund Holding Wallets
+    address public growthXWallet;
+
+    // token config
     uint256 public _transferTaxfee;
     uint256 public _buySellTaxFee;
     uint256 public _buySellEcosystemFee;
     uint256 public _transferEcosystemFee;
 
-    uint256 public _maxTxAmount;
-    uint256 public _minBuysellAmount;
+    uint256 public _maxTxAmount; // max amount allowed to transfer
+    uint256 public _minBuysellAmount; // min amount allowed to buy or sell.
 
+    // role id
     bytes32 public constant BADGE_MANAGER = keccak256("BADGE_MANAGER");
     bytes32 public constant TAX_MANAGER = keccak256("TAX_MANAGER");
 
@@ -411,7 +419,6 @@ contract TYON_V1 is
     uint256 private constant MAX = ~uint256(0);
     address[] internal _excluded;
 
-    event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
     event SalePhaseUpdated(uint8 salePhase);
 
     // prevent intialization of logic contract.
@@ -438,6 +445,7 @@ contract TYON_V1 is
         );
     }
 
+    // initialize the contract
     function __TYON_V1_init_unchained(
         address _growthX,
         address _tyonShield,
@@ -452,11 +460,12 @@ contract TYON_V1 is
         _tTotal = 500000000 * 10**9;
         _rTotal = (MAX - (MAX % _tTotal));
 
+        // sharing total supply
         _rOwned[_msgSender()] = _rTotal / 2;
         _rOwned[_growthXWallet] = _rTotal / 2;
 
-        _transferTaxfee = 0;
-        _buySellTaxFee = 15;
+        _transferTaxfee = 0; // 0%
+        _buySellTaxFee = 15; // actual value is 1.5%
 
         _taxFee = _transferTaxfee;
         _previousTaxFee = _taxFee;
@@ -470,17 +479,17 @@ contract TYON_V1 is
 
         _salePhase = 1;
 
-        _maxTxAmount = 5000000 * 10**9;
-        _minBuysellAmount = 500 * 10**9;
+        _maxTxAmount = 5000000 * 10**9; // 5000000 TYON
+        _minBuysellAmount = 500 * 10**9; // 500 TYON
 
         // IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(
         //     0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 //pancakeswap BNB testnet
         // );
-        // Create a uniswap pair for this new token
+        // // Creating a new uniswap pair for this new token
         // uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
         //     .createPair(address(this), _uniswapV2Router.WETH());
 
-        // // set the rest of the contract variables
+        // // set the contract variables
         // uniswapV2Router = _uniswapV2Router;
         // _isLP[uniswapV2Pair] = true;
 
@@ -499,7 +508,7 @@ contract TYON_V1 is
         _isExcludedFromFee[_growthXWallet] = true;
         _isExcludedFromFee[address(this)] = true;
 
-        _badge[_msgSender()] = 1;
+        _badge[_msgSender()] = 1; // master of coin
         _badge[_growthX] = 8; //indicates no badge
         _badge[_tyonShield] = 8;
         _badge[_fundMe] = 8;
@@ -507,14 +516,16 @@ contract TYON_V1 is
         _badge[_growthXWallet] = 8;
         _badge[uniswapV2Pair] = 8;
 
-        _grantRole(DEFAULT_ADMIN_ROLE, owner()); //assigning owner as the default Admin of roles
+        // assigning roles
+        _grantRole(DEFAULT_ADMIN_ROLE, owner()); //'default Admin' of roles
         _grantRole(BADGE_MANAGER, owner());
         _grantRole(TAX_MANAGER, owner());
 
-        // exclude owner and growthX from reward.
+        // exclude owner and growthXWallet from rewards.
         excludeFromReward(owner());
         excludeFromReward(_growthXWallet);
 
+        // transaction event
         emit Transfer(address(0), _msgSender(), _tTotal / 2);
         emit Transfer(address(0), _growthXWallet, _tTotal / 2);
     }
@@ -678,6 +689,14 @@ contract TYON_V1 is
         return "not Applicable";
     }
 
+    function isExcludedFromReward(address account) public view returns (bool) {
+        return _isExcluded[account];
+    }
+
+    function isExcludedFromFee(address account) public view returns (bool) {
+        return _isExcludedFromFee[account];
+    }
+
     // public functions
     function setLPAddress(address account) public virtual onlyOwner {
         require(!_isLP[account], "account already added");
@@ -722,6 +741,10 @@ contract TYON_V1 is
         address recipient,
         uint256 amount
     ) public virtual override returns (bool) {
+        require(
+            amount <= _allowances[sender][_msgSender()],
+            "amount should be less than allowance"
+        );
         _transfer(sender, recipient, amount);
         _approve(
             sender,
@@ -755,10 +778,6 @@ contract TYON_V1 is
             _allowances[_msgSender()][spender] - (subtractedValue)
         );
         return true;
-    }
-
-    function isExcludedFromReward(address account) public view returns (bool) {
-        return _isExcluded[account];
     }
 
     function reflectionFromToken(uint256 tAmount, bool deductTransferFee)
@@ -994,10 +1013,6 @@ contract TYON_V1 is
     function restoreAllFee() internal {
         _taxFee = _previousTaxFee;
         _ecosystemFee = _previousEcosystemFee;
-    }
-
-    function isExcludedFromFee(address account) public view returns (bool) {
-        return _isExcludedFromFee[account];
     }
 
     function _approve(
