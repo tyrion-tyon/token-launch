@@ -629,6 +629,10 @@ contract TYON_V1 is
         return _decimals;
     }
 
+    function salePhase() external view returns (uint8) {
+        return _salePhase;
+    }
+
     function totalSupply() external view override returns (uint256) {
         return _tTotal;
     }
