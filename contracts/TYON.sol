@@ -652,7 +652,7 @@ contract TYON_V1 is
     }
 
     function getUserBadge(address _address)
-        external
+        public
         view
         virtual
         returns (string memory __badge)
