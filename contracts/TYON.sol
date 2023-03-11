@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Unlicensed
 
-pragma solidity 0.8.9;
+pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 //import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
@@ -425,9 +425,14 @@ contract TYON_V1 is
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
+    /**
+     * @dev initialize the token contract. Minting _totalSupply into owner and growthX account.
+     * setting msg sender as DEFAULT_ADMIN_ROLE, MINTER_ROLE, BURNER_ROLE.
+     * Note:initializer modifier is used to prevent initialize token twice.
+     */
     function initialize(
         address _growthX,
-        address _tyonShield,
+        address _tyrionShield,
         address _fundMe,
         address _ecosystemGrowth,
         address _growthXWallet
@@ -438,7 +443,7 @@ contract TYON_V1 is
         __AccessControl_init_unchained();
         __TYON_V1_init_unchained(
             _growthX,
-            _tyonShield,
+            _tyrionShield,
             _fundMe,
             _ecosystemGrowth,
             _growthXWallet
@@ -448,7 +453,7 @@ contract TYON_V1 is
     // initialize the contract
     function __TYON_V1_init_unchained(
         address _growthX,
-        address _tyonShield,
+        address _tyrionShield,
         address _fundMe,
         address _ecosystemGrowth,
         address _growthXWallet
@@ -494,7 +499,7 @@ contract TYON_V1 is
         // _isLP[uniswapV2Pair] = true;
 
         tyonGrowthX = _growthX;
-        tyonShield = _tyonShield;
+        tyonShield = _tyrionShield;
         tyonFundMe = _fundMe;
         tyonEcosystemGrowth = _ecosystemGrowth;
         growthXWallet = _growthXWallet;
@@ -503,14 +508,14 @@ contract TYON_V1 is
         _isExcludedFromFee[owner()] = true;
         _isExcludedFromFee[_growthX] = true;
         _isExcludedFromFee[_fundMe] = true;
-        _isExcludedFromFee[_tyonShield] = true;
+        _isExcludedFromFee[_tyrionShield] = true;
         _isExcludedFromFee[_ecosystemGrowth] = true;
         _isExcludedFromFee[_growthXWallet] = true;
         _isExcludedFromFee[address(this)] = true;
 
         _badge[_msgSender()] = 1; // master of coin
         _badge[_growthX] = 8; //indicates no badge
-        _badge[_tyonShield] = 8;
+        _badge[_tyrionShield] = 8;
         _badge[_fundMe] = 8;
         _badge[_ecosystemGrowth] = 8;
         _badge[_growthXWallet] = 8;
@@ -565,6 +570,13 @@ contract TYON_V1 is
         emit SalePhaseUpdated(phase);
     }
 
+    /**
+     * @dev function to set new badge for any account.
+     * @param account address of the user.
+     * @param badgeId new Badge Id. Refer getUserBadge.
+        - the caller must be of role 'BADGE_MANAGER'.
+        - 
+     */
     function setBadge(address account, uint8 badgeId)
         external
         virtual
@@ -577,7 +589,7 @@ contract TYON_V1 is
     /**
      * @dev function to withdraw ERC20 tokens trapped on smartcontract.
      * @param amount amount of token reuired to withdraw.
-     * @param token addres of the ERC20 token smartcontract
+     * @param token address of the ERC20 token smartcontract
         - the caller must be the owner of the contract
      */
 
