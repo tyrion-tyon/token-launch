@@ -14,7 +14,7 @@ contract("TYON_V1 TEST", (accounts) => {
     try {
       await tyon.initialize(
         TYON_V1_CONFIG._growthX,
-        TYON_V1_CONFIG._tyonShield,
+        TYON_V1_CONFIG._tyrionShield,
         TYON_V1_CONFIG._fundMe,
         TYON_V1_CONFIG._ecosystemGrowth,
         TYON_V1_CONFIG._growthxWallet
@@ -34,7 +34,7 @@ contract("TYON_V1 TEST", (accounts) => {
     const decimal = await tyon.decimals();
     const totalSupply = await tyon.totalSupply();
     const tyonGrowthX = await tyon.tyonGrowthX();
-    const tyonShield = await tyon.tyonShield();
+    const tyrionShield = await tyon.tyrionShield();
     const tyonFundMe = await tyon.tyonFundMe();
     const tyonEcosystemGrowth = await tyon.tyonEcosystemGrowth();
     const growthXWallet = await tyon.growthXWallet();
@@ -65,9 +65,14 @@ contract("TYON_V1 TEST", (accounts) => {
       "tyonGrowthX account error"
     );
     assert.equal(
-      tyonShield,
-      TYON_V1_CONFIG._tyonShield,
-      "tyonShield account error"
+      tyrionShield,
+      TYON_V1_CONFIG._tyrionShield,
+      "tyrionShield account error"
+    );
+    assert.equal(
+      growthXWallet,
+      TYON_V1_CONFIG._growthxWallet,
+      "growthX wallet account error"
     );
     assert.equal(
       tyonFundMe,
@@ -105,12 +110,14 @@ contract("TYON_V1 TEST", (accounts) => {
     //total fees
     assert.equal(totalFees, 0, "totalFees error");
   });
-  it("should equally distribute total supply between owner and growthX", async () => {
+  it("should distribute total supply between owner and growthX and tyrion shield", async () => {
     const ownerBalance = await tyon.balanceOf(accounts[0]);
     const growthXBalance = await tyon.balanceOf(TYON_V1_CONFIG._growthxWallet);
+    const tyrionShield = await tyon.balanceOf(TYON_V1_CONFIG._tyrionShield);
     const totalSupply = await tyon.totalSupply();
-    assert.equal(ownerBalance, totalSupply / 2, "ownerBalance error");
-    assert.equal(growthXBalance, totalSupply / 2, "growthXBalance error");
+    assert.equal(ownerBalance, (totalSupply * 53) / 100, "ownerBalance error");
+    assert.equal(growthXBalance, (totalSupply * 2) / 5, "growthXBalance error");
+    assert.equal(tyrionShield, (totalSupply * 7) / 100, "growthXBalance error");
   });
   it("is pausable", async () => {
     let paused = await tyon.paused();
@@ -141,11 +148,11 @@ contract("TYON_V1 TEST", (accounts) => {
       );
     }
   });
-  it("allow owner to transfer token without deductinge cosystem fee", async () => {
+  it("allow owner to transfer token without deductinge ecosystem fee", async () => {
     await tyon.transfer(accounts[1], web3.utils.toWei("1000", "gwei"));
     const ownerBalance = await tyon.balanceOf(accounts[0]);
     const user1Balance = await tyon.balanceOf(accounts[1]);
-    assert.equal(web3.utils.fromWei(ownerBalance, "gwei"), 249999000);
+    assert.equal(web3.utils.fromWei(ownerBalance, "gwei"), 264999000);
     assert.equal(web3.utils.fromWei(user1Balance, "gwei"), 1000);
   });
   it("allows user to user transfer with deducting ecosystem fee", async () => {
@@ -166,11 +173,13 @@ contract("TYON_V1 TEST", (accounts) => {
     );
     const fundMeBalance = await tyon.balanceOf(TYON_V1_CONFIG._fundMe);
     const growthXBalance = await tyon.balanceOf(TYON_V1_CONFIG._growthX);
-    const tyonShieldBalance = await tyon.balanceOf(TYON_V1_CONFIG._tyonShield);
+    const tyonShieldBalance = await tyon.balanceOf(
+      TYON_V1_CONFIG._tyrionShield
+    );
     assert.equal(web3.utils.fromWei(ecosystemGrowthBalance, "gwei"), 0.1875);
     assert.equal(web3.utils.fromWei(fundMeBalance, "gwei"), 0.1875);
     assert.equal(web3.utils.fromWei(growthXBalance, "gwei"), 0.1875);
-    assert.equal(web3.utils.fromWei(tyonShieldBalance, "gwei"), 0.1875);
+    assert.equal(web3.utils.fromWei(tyonShieldBalance, "gwei"), 35000000.1875);
   });
   it("allows user to transfer token to a fee excluded account without deducting ecosystem fee", async () => {
     await tyon.transfer(accounts[0], web3.utils.toWei("100", "gwei"), {
@@ -179,9 +188,9 @@ contract("TYON_V1 TEST", (accounts) => {
     const ownerBalance = await tyon.balanceOf(accounts[0]);
     const user1Balance = await tyon.balanceOf(accounts[1]);
     assert.equal(web3.utils.fromWei(user1Balance, "gwei"), 849.75);
-    assert.equal(web3.utils.fromWei(ownerBalance, "gwei"), 249999100);
+    assert.equal(web3.utils.fromWei(ownerBalance, "gwei"), 264999100);
   });
-  it("allows ownerto set Liquid Pool address", async () => {
+  it("allows owner to set Liquid Pool address", async () => {
     await tyon.setLPAddress(accounts[9]);
     assert.ok(true);
   });
@@ -192,8 +201,8 @@ contract("TYON_V1 TEST", (accounts) => {
     const user1Balance = await tyon.balanceOf(accounts[1]);
     const LPBalance = await tyon.balanceOf(accounts[9]);
 
-    assert.equal(web3.utils.fromWei(user1Balance, "gwei"), 252.272727272); // balance includes reflection
-    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 590.909090909);
+    assert.equal(web3.utils.fromWei(user1Balance, "gwei"), 249.750064219); // balance includes reflection
+    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 585.000150424);
   });
   it("fail if transfer/sell amount is less than minBuysellAmount", async () => {
     try {
@@ -214,8 +223,8 @@ contract("TYON_V1 TEST", (accounts) => {
     });
     const user2Balance = await tyon.balanceOf(accounts[2]);
     const LPBalance = await tyon.balanceOf(accounts[9]);
-    assert.equal(web3.utils.fromWei(user2Balance, "gwei"), 591.673675357); // balance includes reflection
-    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 41.287560211);
+    assert.equal(web3.utils.fromWei(user2Balance, "gwei"), 585.750150794); // balance includes reflection
+    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 35.000158674);
   });
   it("allows user to sell token to LP with deducting fee and tax", async () => {
     await tyon.transfer(accounts[9], web3.utils.toWei("500", "gwei"), {
@@ -223,8 +232,8 @@ contract("TYON_V1 TEST", (accounts) => {
     });
     const user2Balance = await tyon.balanceOf(accounts[2]);
     const LPBalance = await tyon.balanceOf(accounts[9]);
-    assert.equal(web3.utils.fromWei(user2Balance, "gwei"), 92.444042377); // balance includes reflection
-    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 533.231153153);
+    assert.equal(web3.utils.fromWei(user2Balance, "gwei"), 85.750169168); // balance includes reflection
+    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 522.500270636);
   });
   it("assign all holders with badge", async () => {
     const holdersBadge = await tyon.getUserBadge(accounts[2]);
@@ -365,5 +374,20 @@ contract("TYON_V1 TEST", (accounts) => {
     );
     const user4Balance = await tyon.balanceOf(accounts[4]);
     assert.equal(user4Balance.toString(), 9950000000);
+  });
+  it("allows transfer token from a reward excluded account to a reward excluded without deducting any fee", async () => {
+    await tyon.transfer(
+      TYON_V1_CONFIG._growthxWallet,
+      web3.utils.toWei("1000", "gwei"),
+      {
+        from: accounts[0],
+      }
+    );
+    const ownerBalance = await tyon.balanceOf(accounts[0]);
+    const growthXWalletBalance = await tyon.balanceOf(
+      TYON_V1_CONFIG._growthxWallet
+    );
+    assert.equal(web3.utils.fromWei(growthXWalletBalance, "gwei"), 200001000);
+    assert.equal(web3.utils.fromWei(ownerBalance, "gwei"), 264998099.999999);
   });
 });
