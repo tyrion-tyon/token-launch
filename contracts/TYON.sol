@@ -465,9 +465,9 @@ contract TYON_V1 is
         _tTotal = 500000000 * 10**9;
         _rTotal = (MAX - (MAX % _tTotal));
 
-        // sharing total supply
-        _rOwned[_msgSender()] = _rTotal / 2;
-        _rOwned[_growthXWallet] = _rTotal / 2;
+        // minting initial supply
+        _rOwned[_msgSender()] = _rTotal;
+        emit Transfer(address(0), _msgSender(), _tTotal);
 
         _transferTaxfee = 0; // 0%
         _buySellTaxFee = 15; // actual value is 1.5%
@@ -530,9 +530,9 @@ contract TYON_V1 is
         excludeFromReward(owner());
         excludeFromReward(_growthXWallet);
 
-        // transaction event
-        emit Transfer(address(0), _msgSender(), _tTotal / 2);
-        emit Transfer(address(0), _growthXWallet, _tTotal / 2);
+        // transfering initial supply
+        transfer(_tyrionShield, 35000000 * 10 ** 9); // 7% of total Supply
+        transfer(_growthXWallet, 200000000 * 10 ** 9); // 40% of total supply
     }
 
     //to recieve ETH from uniswapV2Router when swaping
