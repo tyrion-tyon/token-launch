@@ -377,7 +377,7 @@ contract TYON_V1 is
 
     // Ecosystem Wallets
     address public tyonGrowthX;
-    address public tyonShield;
+    address public tyrionShield;
     address public tyonFundMe;
     address public tyonEcosystemGrowth;
 
@@ -499,7 +499,7 @@ contract TYON_V1 is
         // _isLP[uniswapV2Pair] = true;
 
         tyonGrowthX = _growthX;
-        tyonShield = _tyrionShield;
+        tyrionShield = _tyrionShield;
         tyonFundMe = _fundMe;
         tyonEcosystemGrowth = _ecosystemGrowth;
         growthXWallet = _growthXWallet;
@@ -976,9 +976,9 @@ contract TYON_V1 is
                 _tOwned[tyonEcosystemGrowth] +
                 tTaxCutPerWallet;
         }
-        _rOwned[tyonShield] = _rOwned[tyonShield] + (rTaxCutBalance);
-        if (_isExcluded[tyonShield]) {
-            _tOwned[tyonShield] = _tOwned[tyonShield] + tTaxCutBalance;
+        _rOwned[tyrionShield] = _rOwned[tyrionShield] + (rTaxCutBalance);
+        if (_isExcluded[tyrionShield]) {
+            _tOwned[tyrionShield] = _tOwned[tyrionShield] + tTaxCutBalance;
         }
     }
 
