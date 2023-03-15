@@ -22,18 +22,19 @@ interface IUniswapV2Factory {
 
     function feeToSetter() external view returns (address);
 
-    function getPair(address tokenA, address tokenB)
-        external
-        view
-        returns (address pair);
+    function getPair(
+        address tokenA,
+        address tokenB
+    ) external view returns (address pair);
 
     function allPairs(uint256) external view returns (address pair);
 
     function allPairsLength() external view returns (uint256);
 
-    function createPair(address tokenA, address tokenB)
-        external
-        returns (address pair);
+    function createPair(
+        address tokenA,
+        address tokenB
+    ) external returns (address pair);
 
     function setFeeTo(address) external;
 
@@ -59,10 +60,10 @@ interface IUniswapV2Pair {
 
     function balanceOf(address owner) external view returns (uint256);
 
-    function allowance(address owner, address spender)
-        external
-        view
-        returns (uint256);
+    function allowance(
+        address owner,
+        address spender
+    ) external view returns (uint256);
 
     function approve(address spender, uint256 value) external returns (bool);
 
@@ -118,11 +119,7 @@ interface IUniswapV2Pair {
     function getReserves()
         external
         view
-        returns (
-            uint112 reserve0,
-            uint112 reserve1,
-            uint32 blockTimestampLast
-        );
+        returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
 
     function price0CumulativeLast() external view returns (uint256);
 
@@ -132,9 +129,9 @@ interface IUniswapV2Pair {
 
     function mint(address to) external returns (uint256 liquidity);
 
-    function burn(address to)
-        external
-        returns (uint256 amount0, uint256 amount1);
+    function burn(
+        address to
+    ) external returns (uint256 amount0, uint256 amount1);
 
     function swap(
         uint256 amount0Out,
@@ -165,13 +162,7 @@ interface IUniswapV2Router01 {
         uint256 amountBMin,
         address to,
         uint256 deadline
-    )
-        external
-        returns (
-            uint256 amountA,
-            uint256 amountB,
-            uint256 liquidity
-        );
+    ) external returns (uint256 amountA, uint256 amountB, uint256 liquidity);
 
     function addLiquidityETH(
         address token,
@@ -183,11 +174,7 @@ interface IUniswapV2Router01 {
     )
         external
         payable
-        returns (
-            uint256 amountToken,
-            uint256 amountETH,
-            uint256 liquidity
-        );
+        returns (uint256 amountToken, uint256 amountETH, uint256 liquidity);
 
     function removeLiquidity(
         address tokenA,
@@ -299,15 +286,15 @@ interface IUniswapV2Router01 {
         uint256 reserveOut
     ) external pure returns (uint256 amountIn);
 
-    function getAmountsOut(uint256 amountIn, address[] calldata path)
-        external
-        view
-        returns (uint256[] memory amounts);
+    function getAmountsOut(
+        uint256 amountIn,
+        address[] calldata path
+    ) external view returns (uint256[] memory amounts);
 
-    function getAmountsIn(uint256 amountOut, address[] calldata path)
-        external
-        view
-        returns (uint256[] memory amounts);
+    function getAmountsIn(
+        uint256 amountOut,
+        address[] calldata path
+    ) external view returns (uint256[] memory amounts);
 }
 
 // pragma solidity >=0.6.2;
@@ -400,10 +387,6 @@ contract TYON_V1 is
     IUniswapV2Router02 public uniswapV2Router;
     address public uniswapV2Pair;
 
-    string private _name;
-    string private _symbol;
-    uint8 private _decimals;
-
     uint256 internal _tTotal;
     uint256 internal _rTotal;
     uint256 internal _tFeeTotal;
@@ -415,9 +398,12 @@ contract TYON_V1 is
     bool internal _tradeFeeEnabled;
 
     uint8 internal _salePhase;
+    address[] internal _excluded;
 
     uint256 private constant MAX = ~uint256(0);
-    address[] internal _excluded;
+    string private _name;
+    string private _symbol;
+    uint8 private _decimals;
 
     event SalePhaseUpdated(uint8 salePhase);
 
@@ -462,8 +448,8 @@ contract TYON_V1 is
         _symbol = "TYON";
         _decimals = 9;
 
-        _tTotal = 500000000 * 10**9;
-        _rTotal = (MAX - (MAX % _tTotal));
+        _tTotal = 500000000 * 10 ** 9; // total supply
+        _rTotal = (MAX - (MAX % _tTotal)); // total reflection
 
         // minting initial supply
         _rOwned[_msgSender()] = _rTotal;
@@ -482,10 +468,10 @@ contract TYON_V1 is
         _ecosystemFee = _transferEcosystemFee;
         _previousEcosystemFee = _ecosystemFee;
 
-        _salePhase = 1;
+        _salePhase = 1; //initial sale phase.
 
-        _maxTxAmount = 5000000 * 10**9; // 5000000 TYON
-        _minBuysellAmount = 500 * 10**9; // 500 TYON
+        _maxTxAmount = 5000000 * 10 ** 9; // 5000000 TYON
+        _minBuysellAmount = 500 * 10 ** 9; // 500 TYON
 
         // IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(
         //     0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 //pancakeswap BNB testnet
@@ -498,6 +484,7 @@ contract TYON_V1 is
         // uniswapV2Router = _uniswapV2Router;
         // _isLP[uniswapV2Pair] = true;
 
+        // assigning variables
         tyonGrowthX = _growthX;
         tyrionShield = _tyrionShield;
         tyonFundMe = _fundMe;
@@ -538,11 +525,10 @@ contract TYON_V1 is
     //to recieve ETH from uniswapV2Router when swaping
     receive() external payable {}
 
-    function setTaxFeePercent(uint256 transferTaxfee, uint256 buySellTaxFee)
-        external
-        virtual
-        onlyRole(TAX_MANAGER)
-    {
+    function setTaxFeePercent(
+        uint256 transferTaxfee,
+        uint256 buySellTaxFee
+    ) external virtual onlyRole(TAX_MANAGER) {
         _transferTaxfee = transferTaxfee;
         _buySellTaxFee = buySellTaxFee;
     }
@@ -557,11 +543,11 @@ contract TYON_V1 is
 
     function setMaxTxPercent(uint256 maxTxPercent) external virtual onlyOwner {
         require(maxTxPercent > 0 && maxTxPercent < 100, "invalid value");
-        _maxTxAmount = (_tTotal * (maxTxPercent)) / (10**2);
+        _maxTxAmount = (_tTotal * (maxTxPercent)) / (10 ** 2);
     }
 
     function setMinBuySellAmount(uint256 minToken) external virtual onlyOwner {
-        _minBuysellAmount = minToken * 10**9;
+        _minBuysellAmount = minToken * 10 ** 9;
     }
 
     function setCurrentPhase(uint8 phase) external virtual onlyOwner {
@@ -577,11 +563,10 @@ contract TYON_V1 is
         - the caller must be of role 'BADGE_MANAGER'.
         - 
      */
-    function setBadge(address account, uint8 badgeId)
-        external
-        virtual
-        onlyRole(BADGE_MANAGER)
-    {
+    function setBadge(
+        address account,
+        uint8 badgeId
+    ) external virtual onlyRole(BADGE_MANAGER) {
         require(badgeId > 0 && badgeId < 7, "invalid id");
         if (_badge[account] != badgeId) _badge[account] = badgeId;
     }
@@ -593,11 +578,10 @@ contract TYON_V1 is
         - the caller must be the owner of the contract
      */
 
-    function withdrawToken(uint256 amount, address token)
-        external
-        virtual
-        onlyOwner
-    {
+    function withdrawToken(
+        uint256 amount,
+        address token
+    ) external virtual onlyOwner {
         IERC20Upgradeable ERC20Token = IERC20Upgradeable(token);
         ERC20Token.safeTransfer(owner(), amount);
     }
@@ -664,49 +648,10 @@ contract TYON_V1 is
         return _tFeeTotal;
     }
 
-    function balanceOf(address account)
-        external
-        view
-        virtual
-        override
-        returns (uint256)
-    {
+    function balanceOf(
+        address account
+    ) external view virtual override returns (uint256) {
         return _balanceOf(account);
-    }
-
-    function getUserBadge(address _address)
-        public
-        view
-        virtual
-        returns (string memory __badge)
-    {
-        if (_badge[_address] == 1) {
-            return "MasterOfCoins";
-        }
-        if (_badge[_address] == 2) {
-            return "Pods&Bronns";
-        }
-        if (_badge[_address] == 3) {
-            return "Sommeliers";
-        }
-        if (_badge[_address] == 4) {
-            return "Vanguards";
-        }
-        if (_badge[_address] == 5) {
-            return "Westermen";
-        }
-        if (_badge[_address] == 6) {
-            return "Khalasaris";
-        }
-        return "not Applicable";
-    }
-
-    function isExcludedFromReward(address account) public view returns (bool) {
-        return _isExcluded[account];
-    }
-
-    function isExcludedFromFee(address account) public view returns (bool) {
-        return _isExcludedFromFee[account];
     }
 
     // public functions
@@ -720,30 +665,18 @@ contract TYON_V1 is
         _isLP[account] = false;
     }
 
-    function transfer(address recipient, uint256 amount)
-        public
-        virtual
-        override
-        returns (bool)
-    {
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) public virtual override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
 
-    function allowance(address owner, address spender)
-        public
-        view
-        override
-        returns (uint256)
-    {
-        return _allowances[owner][spender];
-    }
-
-    function approve(address spender, uint256 amount)
-        public
-        override
-        returns (bool)
-    {
+    function approve(
+        address spender,
+        uint256 amount
+    ) public override returns (bool) {
         _approve(_msgSender(), spender, amount);
         return true;
     }
@@ -766,11 +699,10 @@ contract TYON_V1 is
         return true;
     }
 
-    function increaseAllowance(address spender, uint256 addedValue)
-        public
-        virtual
-        returns (bool)
-    {
+    function increaseAllowance(
+        address spender,
+        uint256 addedValue
+    ) public virtual returns (bool) {
         _approve(
             _msgSender(),
             spender,
@@ -779,45 +711,16 @@ contract TYON_V1 is
         return true;
     }
 
-    function decreaseAllowance(address spender, uint256 subtractedValue)
-        public
-        virtual
-        returns (bool)
-    {
+    function decreaseAllowance(
+        address spender,
+        uint256 subtractedValue
+    ) public virtual returns (bool) {
         _approve(
             _msgSender(),
             spender,
             _allowances[_msgSender()][spender] - (subtractedValue)
         );
         return true;
-    }
-
-    function reflectionFromToken(uint256 tAmount, bool deductTransferFee)
-        public
-        view
-        returns (uint256)
-    {
-        require(tAmount <= _tTotal, "Amount must be less than supply");
-        if (!deductTransferFee) {
-            (uint256 rAmount, , , , , ) = _getValues(tAmount);
-            return rAmount;
-        } else {
-            (, uint256 rTransferAmount, , , , ) = _getValues(tAmount);
-            return rTransferAmount;
-        }
-    }
-
-    function tokenFromReflection(uint256 rAmount)
-        public
-        view
-        returns (uint256)
-    {
-        require(
-            rAmount <= _rTotal,
-            "Amount must be less than total reflections"
-        );
-        uint256 currentRate = _getRate();
-        return rAmount / (currentRate);
     }
 
     function excludeFromReward(address account) public onlyOwner {
@@ -859,101 +762,71 @@ contract TYON_V1 is
         _isExcludedFromFee[account] = false;
     }
 
-    function _balanceOf(address account)
-        internal
-        view
-        virtual
-        returns (uint256)
-    {
-        if (_isExcluded[account]) return _tOwned[account];
-        return tokenFromReflection(_rOwned[account]);
-    }
-
-    function _reflectFee(uint256 rFee, uint256 tFee) internal virtual {
-        _rTotal = _rTotal - (rFee);
-        _tFeeTotal = _tFeeTotal + (tFee);
-    }
-
-    function _getValues(uint256 tAmount)
-        internal
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256
-        )
-    {
-        (uint256 tTransferAmount, uint256 tFee, uint256 tTaxCut) = _getTValues(
-            tAmount
-        );
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(
-            tAmount,
-            tFee,
-            tTaxCut,
-            _getRate()
-        );
-        return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee, tTaxCut);
-    }
-
-    function _getTValues(uint256 tAmount)
-        internal
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256
-        )
-    {
-        uint256 tFee = calculateTaxFee(tAmount);
-        uint256 tTaxCut = calculateEcosystemFee(tAmount);
-        uint256 tTransferAmount = tAmount - tFee - tTaxCut;
-        return (tTransferAmount, tFee, tTaxCut);
-    }
-
-    function _getRValues(
+    function reflectionFromToken(
         uint256 tAmount,
-        uint256 tFee,
-        uint256 tTaxCut,
-        uint256 currentRate
-    )
-        internal
-        pure
-        returns (
-            uint256,
-            uint256,
-            uint256
-        )
-    {
-        uint256 rAmount = tAmount * (currentRate);
-        uint256 rFee = tFee * (currentRate);
-        uint256 rTaxCut = tTaxCut * (currentRate);
-        uint256 rTransferAmount = rAmount - (rFee) - (rTaxCut);
-        return (rAmount, rTransferAmount, rFee);
-    }
-
-    function _getRate() internal view returns (uint256) {
-        (uint256 rSupply, uint256 tSupply) = _getCurrentSupply();
-        return rSupply / (tSupply);
-    }
-
-    function _getCurrentSupply() internal view returns (uint256, uint256) {
-        uint256 rSupply = _rTotal;
-        uint256 tSupply = _tTotal;
-        for (uint256 i = 0; i < _excluded.length; i++) {
-            if (
-                _rOwned[_excluded[i]] > rSupply ||
-                _tOwned[_excluded[i]] > tSupply
-            ) return (_rTotal, _tTotal);
-            rSupply = rSupply - (_rOwned[_excluded[i]]);
-            tSupply = tSupply - (_tOwned[_excluded[i]]);
+        bool deductTransferFee
+    ) public view returns (uint256) {
+        require(tAmount <= _tTotal, "Amount must be less than supply");
+        if (!deductTransferFee) {
+            (uint256 rAmount, , , , , ) = _getValues(tAmount);
+            return rAmount;
+        } else {
+            (, uint256 rTransferAmount, , , , ) = _getValues(tAmount);
+            return rTransferAmount;
         }
-        if (rSupply < _rTotal / (_tTotal)) return (_rTotal, _tTotal);
-        return (rSupply, tSupply);
     }
 
+    function tokenFromReflection(
+        uint256 rAmount
+    ) public view returns (uint256) {
+        require(
+            rAmount <= _rTotal,
+            "Amount must be less than total reflections"
+        );
+        uint256 currentRate = _getRate();
+        return rAmount / (currentRate);
+    }
+
+    function getUserBadge(
+        address _address
+    ) public view virtual returns (string memory __badge) {
+        if (_badge[_address] == 1) {
+            return "MasterOfCoins";
+        }
+        if (_badge[_address] == 2) {
+            return "Pods&Bronns";
+        }
+        if (_badge[_address] == 3) {
+            return "Sommeliers";
+        }
+        if (_badge[_address] == 4) {
+            return "Vanguards";
+        }
+        if (_badge[_address] == 5) {
+            return "Westermen";
+        }
+        if (_badge[_address] == 6) {
+            return "Khalasaris";
+        }
+        return "not Applicable";
+    }
+
+    function isExcludedFromReward(address account) public view returns (bool) {
+        return _isExcluded[account];
+    }
+
+    function isExcludedFromFee(address account) public view returns (bool) {
+        return _isExcludedFromFee[account];
+    }
+
+    function allowance(
+        address owner,
+        address spender
+    ) public view override returns (uint256) {
+        return _allowances[owner][spender];
+    }
+
+    // internal functions
     function _distributeTax(uint256 tTaxCut) internal {
         uint256 currentRate = _getRate();
         uint256 tTaxCutPerWallet = tTaxCut / 4;
@@ -980,18 +853,6 @@ contract TYON_V1 is
         if (_isExcluded[tyrionShield]) {
             _tOwned[tyrionShield] = _tOwned[tyrionShield] + tTaxCutBalance;
         }
-    }
-
-    function calculateTaxFee(uint256 _amount) internal view returns (uint256) {
-        return (_amount * (_taxFee)) / (10**3);
-    }
-
-    function calculateEcosystemFee(uint256 _amount)
-        internal
-        view
-        returns (uint256)
-    {
-        return (_amount * (_ecosystemFee)) / (10**3);
     }
 
     function removeAllFee() internal {
@@ -1027,11 +888,7 @@ contract TYON_V1 is
         _ecosystemFee = _previousEcosystemFee;
     }
 
-    function _approve(
-        address owner,
-        address spender,
-        uint256 amount
-    ) internal {
+    function _approve(address owner, address spender, uint256 amount) internal {
         require(owner != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
 
@@ -1180,5 +1037,88 @@ contract TYON_V1 is
         _distributeTax(tTaxCut);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
+    }
+
+    function _balanceOf(
+        address account
+    ) internal view virtual returns (uint256) {
+        if (_isExcluded[account]) return _tOwned[account];
+        return tokenFromReflection(_rOwned[account]);
+    }
+
+    function _reflectFee(uint256 rFee, uint256 tFee) internal virtual {
+        _rTotal = _rTotal - (rFee);
+        _tFeeTotal = _tFeeTotal + (tFee);
+    }
+
+    function _getValues(
+        uint256 tAmount
+    )
+        internal
+        view
+        returns (uint256, uint256, uint256, uint256, uint256, uint256)
+    {
+        (uint256 tTransferAmount, uint256 tFee, uint256 tTaxCut) = _getTValues(
+            tAmount
+        );
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(
+            tAmount,
+            tFee,
+            tTaxCut,
+            _getRate()
+        );
+        return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee, tTaxCut);
+    }
+
+    function _getTValues(
+        uint256 tAmount
+    ) internal view returns (uint256, uint256, uint256) {
+        uint256 tFee = calculateTaxFee(tAmount);
+        uint256 tTaxCut = calculateEcosystemFee(tAmount);
+        uint256 tTransferAmount = tAmount - tFee - tTaxCut;
+        return (tTransferAmount, tFee, tTaxCut);
+    }
+
+    function _getRate() internal view returns (uint256) {
+        (uint256 rSupply, uint256 tSupply) = _getCurrentSupply();
+        return rSupply / (tSupply);
+    }
+
+    function _getCurrentSupply() internal view returns (uint256, uint256) {
+        uint256 rSupply = _rTotal;
+        uint256 tSupply = _tTotal;
+        for (uint256 i = 0; i < _excluded.length; i++) {
+            if (
+                _rOwned[_excluded[i]] > rSupply ||
+                _tOwned[_excluded[i]] > tSupply
+            ) return (_rTotal, _tTotal);
+            rSupply = rSupply - (_rOwned[_excluded[i]]);
+            tSupply = tSupply - (_tOwned[_excluded[i]]);
+        }
+        if (rSupply < _rTotal / (_tTotal)) return (_rTotal, _tTotal);
+        return (rSupply, tSupply);
+    }
+
+    function calculateTaxFee(uint256 _amount) internal view returns (uint256) {
+        return (_amount * (_taxFee)) / (10 ** 3);
+    }
+
+    function calculateEcosystemFee(
+        uint256 _amount
+    ) internal view returns (uint256) {
+        return (_amount * (_ecosystemFee)) / (10 ** 3);
+    }
+
+    function _getRValues(
+        uint256 tAmount,
+        uint256 tFee,
+        uint256 tTaxCut,
+        uint256 currentRate
+    ) internal pure returns (uint256, uint256, uint256) {
+        uint256 rAmount = tAmount * (currentRate);
+        uint256 rFee = tFee * (currentRate);
+        uint256 rTaxCut = tTaxCut * (currentRate);
+        uint256 rTransferAmount = rAmount - (rFee) - (rTaxCut);
+        return (rAmount, rTransferAmount, rFee);
     }
 }
