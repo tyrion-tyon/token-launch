@@ -1133,8 +1133,8 @@ contract TYON_V1 is
         ) = _getValues(tAmount);
         _tOwned[sender] = _tOwned[sender] - (tAmount);
         _rOwned[sender] = _rOwned[sender] - (rAmount);
-        _tOwned[recipient] = _tOwned[recipient] - (tTransferAmount);
-        _rOwned[recipient] = _rOwned[recipient] - (rTransferAmount);
+        _tOwned[recipient] = _tOwned[recipient] + (tTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient] + (rTransferAmount);
         _distributeTax(tTaxCut);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
