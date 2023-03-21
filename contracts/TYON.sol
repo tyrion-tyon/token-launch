@@ -3,7 +3,6 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-//import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/Utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -529,6 +528,14 @@ contract TYON_V1 is
         uint256 transferTaxfee,
         uint256 buySellTaxFee
     ) external virtual onlyRole(TAX_MANAGER) {
+        require(
+            transferTaxfee <= 500,
+            "transferTaxfee can't be greater than 50%"
+        );
+        require(
+            buySellTaxFee <= 500,
+            "buySellTaxFee can't be greater than 50%"
+        );
         _transferTaxfee = transferTaxfee;
         _buySellTaxFee = buySellTaxFee;
     }
@@ -537,12 +544,20 @@ contract TYON_V1 is
         uint256 buySellEcosystemFee,
         uint256 transferEcosystemFee
     ) external virtual onlyRole(TAX_MANAGER) {
+        require(
+            buySellEcosystemFee <= 500,
+            "buySellEcosystemFee can't be greater than 50%"
+        );
+        require(
+            transferEcosystemFee <= 500,
+            "transferEcosystemFee can't be greater than 50%"
+        );
         _buySellEcosystemFee = buySellEcosystemFee;
         _transferEcosystemFee = transferEcosystemFee;
     }
 
     function setMaxTxPercent(uint256 maxTxPercent) external virtual onlyOwner {
-        require(maxTxPercent > 0 && maxTxPercent < 100, "invalid value");
+        require(maxTxPercent < 40, "invalid value");
         _maxTxAmount = (_tTotal * (maxTxPercent)) / (10 ** 2);
     }
 
