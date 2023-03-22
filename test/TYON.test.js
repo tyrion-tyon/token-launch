@@ -243,9 +243,8 @@ contract("TYON_V1 TEST", (accounts) => {
   });
   it("allows owner to set sale phase", async () => {
     const phase = await tyon.setCurrentPhase(2);
-    const event = phase.logs.find((obj) => obj.event == "SalePhaseUpdated");
-    const { salePhase } = event.args;
-    assert.equal(salePhase, 2);
+    const salePhase = await tyon.salePhase();
+    assert.equal(salePhase.toString(), 2);
   });
   it("assign all holders with badge according to sale phase", async () => {
     const holdersBadge = await tyon.getUserBadge(accounts[2]);
@@ -317,12 +316,24 @@ contract("TYON_V1 TEST", (accounts) => {
     const _maxTxAmount = await tyon._maxTxAmount();
     assert.equal(web3.utils.fromWei(_maxTxAmount, "gwei"), 50000000);
   });
+  it("allows owner to set setEcosystemFeePercent", async () => {
+    await tyon.setEcosystemFeePercent(20, 50);
+    const _transferEcosystemFee = await tyon._transferEcosystemFee();
+    const _buySellEcosystemFee = await tyon._buySellEcosystemFee();
+    assert.equal(_transferEcosystemFee, 50);
+    assert.equal(_buySellEcosystemFee, 20);
+  });
   it("allows owner to set setTaxFeePercent", async () => {
     await tyon.setTaxFeePercent(10, 20);
     const _transferTaxfee = await tyon._transferTaxfee();
     const _buySellTaxFee = await tyon._buySellTaxFee();
     assert.equal(_transferTaxfee, 10);
     assert.equal(_buySellTaxFee, 20);
+  });
+  it("allows owner to set min buy sell amount", async () => {
+    await tyon.setMinBuySellAmount(2000);
+    const minBuySell = await tyon._minBuysellAmount();
+    assert.equal(minBuySell, web3.utils.toWei("2000", "gwei"));
   });
   it("owner can grant new TAX MANAGER role", async () => {
     const TAX_MANAGER = await tyon.TAX_MANAGER();
@@ -331,6 +342,15 @@ contract("TYON_V1 TEST", (accounts) => {
     const hasRoleTrue = await tyon.hasRole(TAX_MANAGER, accounts[3]);
     assert.equal(hasRoleFalse, false);
     assert.equal(hasRoleTrue, true);
+  });
+  it("allows TAX_MANAGER to change ecosystem fee", async () => {
+    await tyon.setEcosystemFeePercent(10, 5, {
+      from: accounts[3],
+    });
+    const _transferEcosystemFee = await tyon._transferEcosystemFee();
+    const _buySellEcosystemFee = await tyon._buySellEcosystemFee();
+    assert.equal(_transferEcosystemFee, 5);
+    assert.equal(_buySellEcosystemFee, 10);
   });
   it("allows TAX_MANAGER to change tax fee", async () => {
     await tyon.setTaxFeePercent(0, 15, {
@@ -360,10 +380,19 @@ contract("TYON_V1 TEST", (accounts) => {
     const token = await tyon.tokenFromReflection(ref);
     assert.equal(token.toString(), 100000000000);
   });
-  it("allows spender to transfer allowed token", async () => {
+  it("allows spender to transfer allowed token and icrease or decrease allowance", async () => {
     await tyon.approve(accounts[3], web3.utils.toWei("10", "gwei"), {
       from: accounts[2],
     });
+    const allowance1 = await tyon.allowance(accounts[2], accounts[3]);
+    await tyon.increaseAllowance(accounts[3], web3.utils.toWei("10", "gwei"), {
+      from: accounts[2],
+    });
+    const allowance2 = await tyon.allowance(accounts[2], accounts[3]);
+    await tyon.decreaseAllowance(accounts[3], web3.utils.toWei("10", "gwei"), {
+      from: accounts[2],
+    });
+    const allowance3 = await tyon.allowance(accounts[2], accounts[3]);
     await tyon.transferFrom(
       accounts[2],
       accounts[4],
@@ -373,6 +402,9 @@ contract("TYON_V1 TEST", (accounts) => {
       }
     );
     const user4Balance = await tyon.balanceOf(accounts[4]);
+    assert.equal(allowance1, web3.utils.toWei("10", "gwei"));
+    assert.equal(allowance2, web3.utils.toWei("20", "gwei"));
+    assert.equal(allowance3, web3.utils.toWei("10", "gwei"));
     assert.equal(user4Balance.toString(), 9950000000);
   });
   it("allows transfer token from a reward excluded account to a reward excluded without deducting any fee", async () => {
@@ -389,5 +421,19 @@ contract("TYON_V1 TEST", (accounts) => {
     );
     assert.equal(web3.utils.fromWei(growthXWalletBalance, "gwei"), 200001000);
     assert.equal(web3.utils.fromWei(ownerBalance, "gwei"), 264998099.999999);
+  });
+  it("allows owner to withdraw locked token", async () => {
+    await tyon.transfer(tyon.address, web3.utils.toWei("1000", "gwei"));
+    const ownerBalanceBefore = await tyon.balanceOf(accounts[0]);
+    await tyon.withdrawToken(web3.utils.toWei("1000", "gwei"), tyon.address);
+    const ownerBalanceAfter = await tyon.balanceOf(accounts[0]);
+    assert.equal(
+      web3.utils.toWei("1000", "gwei"),
+      ownerBalanceAfter - ownerBalanceBefore
+    );
+  });
+  it("allows calculating totalFees collected", async () => {
+    const fee = await tyon.totalFees();
+    assert.equal(fee, 24750000000);
   });
 });

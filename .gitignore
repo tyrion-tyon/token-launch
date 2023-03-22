@@ -3,6 +3,7 @@ node_modules
 # secret keys
 .secret
 .secret.dev
+.secret.test
 
 package-lock.json
 build
