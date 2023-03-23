@@ -35,7 +35,8 @@ contract TYON_V1 is
     address public tyonEcosystemGrowth;
 
     // Fund Holding Wallets
-    address public growthXWallet;
+    address public walletGrowthX;
+    address public walletTyrionShiled;
 
     // token config
     uint256 public _transferTaxfee;
@@ -87,7 +88,8 @@ contract TYON_V1 is
         address _tyrionShield,
         address _fundMe,
         address _ecosystemGrowth,
-        address _growthXWallet
+        address _growthXWallet,
+        address _tyrionShieldWallet
     ) public initializer {
         __Context_init_unchained();
         __Ownable_init_unchained();
@@ -98,17 +100,19 @@ contract TYON_V1 is
             _tyrionShield,
             _fundMe,
             _ecosystemGrowth,
-            _growthXWallet
+            _growthXWallet,
+            _tyrionShieldWallet
         );
     }
 
-    // initialize the contract
+    // internal function to initialize the contract
     function __TYON_V1_init_unchained(
         address _growthX,
         address _tyrionShield,
         address _fundMe,
         address _ecosystemGrowth,
-        address _growthXWallet
+        address _growthXWallet,
+        address _tyrionShieldWallet
     ) internal onlyInitializing {
         _name = "TYON";
         _symbol = "TYON";
@@ -139,25 +143,26 @@ contract TYON_V1 is
         _maxTxAmount = 5000000 * 10 ** 9; // 5000000 TYON
         _minBuysellAmount = 500 * 10 ** 9; // 500 TYON
 
-        IPancakeRouter02 _pancakeRouter = IPancakeRouter02(
-            0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3
-        );
-        // Creating a new pancakeswap pair for this new token
-        pancakePair = IPancakeFactory(_pancakeRouter.factory()).createPair(
-            address(this),
-            _pancakeRouter.WETH()
-        );
+        // IPancakeRouter02 _pancakeRouter = IPancakeRouter02(
+        //     0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 // pancake router for testnet
+        // );
+        // // Creating a new pancakeswap pair for this new token
+        // pancakePair = IPancakeFactory(_pancakeRouter.factory()).createPair(
+        //     address(this),
+        //     _pancakeRouter.WETH()
+        // );
 
-        // set the contract variables
-        pancakeRouter = _pancakeRouter;
-        _isLP[pancakePair] = true;
+        // // set the contract variables
+        // pancakeRouter = _pancakeRouter;
+        // _isLP[pancakePair] = true;
 
         // assigning variables
         tyonGrowthX = _growthX;
         tyrionShield = _tyrionShield;
         tyonFundMe = _fundMe;
         tyonEcosystemGrowth = _ecosystemGrowth;
-        growthXWallet = _growthXWallet;
+        walletGrowthX = _growthXWallet;
+        walletTyrionShiled = _tyrionShieldWallet;
 
         //exclude owner fee wallets and this contract from fee
         _isExcludedFromFee[owner()] = true;
@@ -166,6 +171,7 @@ contract TYON_V1 is
         _isExcludedFromFee[_tyrionShield] = true;
         _isExcludedFromFee[_ecosystemGrowth] = true;
         _isExcludedFromFee[_growthXWallet] = true;
+        _isExcludedFromFee[_tyrionShieldWallet] = true;
         _isExcludedFromFee[address(this)] = true;
 
         _badge[_msgSender()] = 1; // master of coin
@@ -174,6 +180,7 @@ contract TYON_V1 is
         _badge[_fundMe] = 8;
         _badge[_ecosystemGrowth] = 8;
         _badge[_growthXWallet] = 8;
+        _badge[_tyrionShieldWallet]= 8;
         _badge[pancakePair] = 8;
 
         // assigning roles
@@ -181,18 +188,28 @@ contract TYON_V1 is
         _grantRole(BADGE_MANAGER, owner());
         _grantRole(TAX_MANAGER, owner());
 
-        // exclude owner and growthXWallet from rewards.
+        // exclude owner and walletGrowthX from rewards.
         excludeFromReward(owner());
         excludeFromReward(_growthXWallet);
+        excludeFromReward(_tyrionShieldWallet);
 
         // transfering initial supply
-        transfer(_tyrionShield, 35000000 * 10 ** 9); // 7% of total Supply
+        transfer(_tyrionShieldWallet, 35000000 * 10 ** 9); // 7% of total Supply
         transfer(_growthXWallet, 200000000 * 10 ** 9); // 40% of total supply
     }
 
-    //to recieve ETH from pancakeV2Router when swaping
+    /**
+     * @dev to recieve ETH from pancakeV2Router when swaping.
+     */
     receive() external payable {}
 
+    /**
+     * @dev function to set Tax percentages.
+     * @param transferTaxfee tax percentage for standard transfer.
+     * @param buySellTaxFee tax percentage for buy/sell transaction.
+        - fee value should be multiplied with 10.
+        - the caller must be of role TAX_MANAGER.
+     */
     function setTaxFeePercent(
         uint256 transferTaxfee,
         uint256 buySellTaxFee
@@ -209,6 +226,13 @@ contract TYON_V1 is
         _buySellTaxFee = buySellTaxFee;
     }
 
+    /**
+     * @dev function to set ecosystem fee percentages.
+     * @param buySellEcosystemFee ecosystem fee percentage for buy/sell transaction.
+     * @param transferEcosystemFee ecosystem fee percentage for standard transfer.
+        - fee value should be multiplied with 10.
+        - the caller must be of role TAX_MANAGER.
+     */
     function setEcosystemFeePercent(
         uint256 buySellEcosystemFee,
         uint256 transferEcosystemFee
@@ -240,13 +264,6 @@ contract TYON_V1 is
         emit SalePhaseUpdated(phase);
     }
 
-    /**
-     * @dev function to set new badge for any account.
-     * @param account address of the user.
-     * @param badgeId new Badge Id. Refer getUserBadge.
-        - the caller must be of role 'BADGE_MANAGER'.
-        - 
-     */
     function setBadge(
         address account,
         uint8 badgeId
@@ -271,31 +288,26 @@ contract TYON_V1 is
     }
 
     /**
-     * @dev Pauses the token contract.
-     *
-     * See {ERC20Pausable} and {Pausable-_pause}.
-     *
-     * Requirements:
-     *
-     * - the caller must be the owner of the contract.
+     * @dev function to withdraw all ETH trapped on smartcontract to 
+       owner's account.
      */
+
+    function withdraw() external virtual onlyOwner {
+        (bool sent, ) = owner().call{value: address(this).balance}("");
+        require(sent, "Failed to send Ether");
+    }
+
     function pause() external virtual onlyOwner {
         _pause();
     }
 
-    /**
-     * @dev Unpauses the token contract.
-     *
-     * See {ERC20Pausable} and {Pausable-_unpause}.
-     *
-     * Requirements:
-     *
-     * - the caller must be owner of the contract.
-     */
     function unpause() external virtual onlyOwner {
         _unpause();
     }
 
+    /**
+     * @dev function to distribute token as reflection.
+     */
     function deliver(uint256 tAmount) external whenNotPaused {
         address sender = _msgSender();
         require(

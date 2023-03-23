@@ -17,7 +17,8 @@ contract("TYON_V1 TEST", (accounts) => {
         TYON_V1_CONFIG._tyrionShield,
         TYON_V1_CONFIG._fundMe,
         TYON_V1_CONFIG._ecosystemGrowth,
-        TYON_V1_CONFIG._growthxWallet
+        TYON_V1_CONFIG._growthxWallet,
+        TYON_V1_CONFIG._tyrionShieldWallet
       );
       assert.fail("contract initialised again");
     } catch (error) {
@@ -37,7 +38,8 @@ contract("TYON_V1 TEST", (accounts) => {
     const tyrionShield = await tyon.tyrionShield();
     const tyonFundMe = await tyon.tyonFundMe();
     const tyonEcosystemGrowth = await tyon.tyonEcosystemGrowth();
-    const growthXWallet = await tyon.growthXWallet();
+    const growthXWallet = await tyon.walletGrowthX();
+    const tyrionShieldWallet = await tyon.walletTyrionShiled();
     const _transferTaxfee = await tyon._transferTaxfee();
     const _buySellTaxFee = await tyon._buySellTaxFee();
     const _buySellEcosystemFee = await tyon._buySellEcosystemFee();
@@ -73,6 +75,11 @@ contract("TYON_V1 TEST", (accounts) => {
       growthXWallet,
       TYON_V1_CONFIG._growthxWallet,
       "growthX wallet account error"
+    );
+    assert.equal(
+      tyrionShieldWallet,
+      TYON_V1_CONFIG._tyrionShieldWallet,
+      "tyrion wallet account error"
     );
     assert.equal(
       tyonFundMe,
@@ -113,7 +120,9 @@ contract("TYON_V1 TEST", (accounts) => {
   it("should distribute total supply between owner and growthX and tyrion shield", async () => {
     const ownerBalance = await tyon.balanceOf(accounts[0]);
     const growthXBalance = await tyon.balanceOf(TYON_V1_CONFIG._growthxWallet);
-    const tyrionShield = await tyon.balanceOf(TYON_V1_CONFIG._tyrionShield);
+    const tyrionShield = await tyon.balanceOf(
+      TYON_V1_CONFIG._tyrionShieldWallet
+    );
     const totalSupply = await tyon.totalSupply();
     assert.equal(ownerBalance, (totalSupply * 53) / 100, "ownerBalance error");
     assert.equal(growthXBalance, (totalSupply * 2) / 5, "growthXBalance error");
@@ -179,7 +188,7 @@ contract("TYON_V1 TEST", (accounts) => {
     assert.equal(web3.utils.fromWei(ecosystemGrowthBalance, "gwei"), 0.1875);
     assert.equal(web3.utils.fromWei(fundMeBalance, "gwei"), 0.1875);
     assert.equal(web3.utils.fromWei(growthXBalance, "gwei"), 0.1875);
-    assert.equal(web3.utils.fromWei(tyonShieldBalance, "gwei"), 35000000.1875);
+    assert.equal(web3.utils.fromWei(tyonShieldBalance, "gwei"), 0.1875);
   });
   it("allows user to transfer token to a fee excluded account without deducting ecosystem fee", async () => {
     await tyon.transfer(accounts[0], web3.utils.toWei("100", "gwei"), {
@@ -201,8 +210,8 @@ contract("TYON_V1 TEST", (accounts) => {
     const user1Balance = await tyon.balanceOf(accounts[1]);
     const LPBalance = await tyon.balanceOf(accounts[9]);
 
-    assert.equal(web3.utils.fromWei(user1Balance, "gwei"), 249.750064219); // balance includes reflection
-    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 585.000150424);
+    assert.equal(web3.utils.fromWei(user1Balance, "gwei"), 252.272727272); // balance includes reflection
+    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 590.909090909);
   });
   it("fail if transfer/sell amount is less than minBuysellAmount", async () => {
     try {
@@ -223,8 +232,8 @@ contract("TYON_V1 TEST", (accounts) => {
     });
     const user2Balance = await tyon.balanceOf(accounts[2]);
     const LPBalance = await tyon.balanceOf(accounts[9]);
-    assert.equal(web3.utils.fromWei(user2Balance, "gwei"), 585.750150794); // balance includes reflection
-    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 35.000158674);
+    assert.equal(web3.utils.fromWei(user2Balance, "gwei"), 591.673675357); // balance includes reflection
+    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 41.287560211);
   });
   it("allows user to sell token to LP with deducting fee and tax", async () => {
     await tyon.transfer(accounts[9], web3.utils.toWei("500", "gwei"), {
@@ -232,8 +241,8 @@ contract("TYON_V1 TEST", (accounts) => {
     });
     const user2Balance = await tyon.balanceOf(accounts[2]);
     const LPBalance = await tyon.balanceOf(accounts[9]);
-    assert.equal(web3.utils.fromWei(user2Balance, "gwei"), 85.750169168); // balance includes reflection
-    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 522.500270636);
+    assert.equal(web3.utils.fromWei(user2Balance, "gwei"), 92.444042377); // balance includes reflection
+    assert.equal(web3.utils.fromWei(LPBalance, "gwei"), 533.231153153);
   });
   it("assign all holders with badge", async () => {
     const holdersBadge = await tyon.getUserBadge(accounts[2]);
@@ -431,6 +440,26 @@ contract("TYON_V1 TEST", (accounts) => {
       web3.utils.toWei("1000", "gwei"),
       ownerBalanceAfter - ownerBalanceBefore
     );
+  });
+  it("accept ETH", async () => {
+    try {
+      await web3.eth.sendTransaction({
+        from: accounts[9],
+        to: tyon.address,
+        value: "10",
+      });
+      assert.ok(true);
+    } catch (error) {
+      console.log(error);
+      assert.fail("can't recieve ETH");
+    }
+  });
+  it("allows owner to withdraw ETH", async () => {
+    const balance1 = await web3.eth.getBalance(tyon.address);
+    await tyon.withdraw();
+    const balance2 = await web3.eth.getBalance(tyon.address);
+    assert.equal(balance1, 10);
+    assert.equal(balance2, 0);
   });
   it("allows calculating totalFees collected", async () => {
     const fee = await tyon.totalFees();
