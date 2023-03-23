@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Unlicensed
 
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.15;
 
 import "./interfaces/IPancakeFactory.sol";
 import "./interfaces/IPancakePair.sol";
@@ -180,7 +180,7 @@ contract TYON_V1 is
         _badge[_fundMe] = 8;
         _badge[_ecosystemGrowth] = 8;
         _badge[_growthXWallet] = 8;
-        _badge[_tyrionShieldWallet]= 8;
+        _badge[_tyrionShieldWallet] = 8;
         _badge[pancakePair] = 8;
 
         // assigning roles
