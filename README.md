@@ -95,4 +95,4 @@ $truffle test
 
 ---
 
-- TYON_V1 -
+- TYON_V1 - https://testnet.bscscan.com/token/0xD748Bb49130D26c48d8e8B7817BbC40e552c0AEd
