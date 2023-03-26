@@ -112,7 +112,7 @@ contract("TYON_V1 TEST", (accounts) => {
 
     // badge test
     assert.equal(ownerBadge, "MasterOfCoins", "owner badge error");
-    assert.equal(walletBadge, "not Applicable", "wallet badge error");
+    assert.equal(walletBadge, "not_applicable", "wallet badge error");
 
     //total fees
     assert.equal(totalFees, 0, "totalFees error");
@@ -248,7 +248,7 @@ contract("TYON_V1 TEST", (accounts) => {
     const holdersBadge = await tyon.getUserBadge(accounts[2]);
     const nonHoldersBadge = await tyon.getUserBadge(accounts[4]);
     assert.equal(holdersBadge, "MasterOfCoins");
-    assert.equal(nonHoldersBadge, "not Applicable");
+    assert.equal(nonHoldersBadge, "not_applicable");
   });
   it("allows owner to set sale phase", async () => {
     const phase = await tyon.setCurrentPhase(2);
@@ -261,7 +261,7 @@ contract("TYON_V1 TEST", (accounts) => {
     await tyon.transfer(accounts[3], 1000);
     const updatedBadge = await tyon.getUserBadge(accounts[3]);
     assert.equal(holdersBadge, "MasterOfCoins");
-    assert.equal(nonHoldersBadge, "not Applicable");
+    assert.equal(nonHoldersBadge, "not_applicable");
     assert.equal(updatedBadge, "Pods&Bronns");
   });
   it("allows owner to change holders badge", async () => {
@@ -464,5 +464,20 @@ contract("TYON_V1 TEST", (accounts) => {
   it("allows calculating totalFees collected", async () => {
     const fee = await tyon.totalFees();
     assert.equal(fee, 24750000000);
+  });
+  it("allows owner to exclude account from reward", async () => {
+    const isExcluded1 = await tyon.isExcludedFromReward(accounts[1]);
+    const balance1 = await tyon.balanceOf(accounts[1]);
+    await tyon.excludeFromReward(accounts[1]);
+    const isExcluded2 = await tyon.isExcludedFromReward(accounts[1]);
+    const balance2 = await tyon.balanceOf(accounts[1]);
+    await tyon.includeInReward(accounts[1]);
+    const isExcluded3 = await tyon.isExcludedFromReward(accounts[1]);
+    const balance3 = await tyon.balanceOf(accounts[1]);
+    assert.equal(isExcluded1, false);
+    assert.equal(isExcluded2, true);
+    assert.equal(isExcluded3, false);
+    assert.equal(balance2.toString(), balance1.toString());
+    assert.equal(balance3.toString(), balance2.toString());
   });
 });

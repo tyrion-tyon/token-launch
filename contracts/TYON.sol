@@ -39,10 +39,10 @@ contract TYON_V1 is
     address public walletTyrionShiled;
 
     // token config
-    uint256 public _transferTaxfee;
-    uint256 public _buySellTaxFee;
-    uint256 public _buySellEcosystemFee;
-    uint256 public _transferEcosystemFee;
+    uint16 public _transferTaxfee;
+    uint16 public _buySellTaxFee;
+    uint16 public _buySellEcosystemFee;
+    uint16 public _transferEcosystemFee;
 
     uint256 public _maxTxAmount; // max amount allowed to transfer
     uint256 public _minBuysellAmount; // min amount allowed to buy or sell.
@@ -67,7 +67,10 @@ contract TYON_V1 is
     uint8 internal _salePhase;
     address[] internal _excluded;
 
+    uint8 private constant MAX_TX_PERCENT = 40;
+    uint16 private constant MAX_FEE_PERCENT = 50 * 10; //50% value mul by 10 to avoid precision error
     uint256 private constant MAX = ~uint256(0);
+
     string private _name;
     string private _symbol;
     uint8 private _decimals;
@@ -211,16 +214,13 @@ contract TYON_V1 is
         - the caller must be of role TAX_MANAGER.
      */
     function setTaxFeePercent(
-        uint256 transferTaxfee,
-        uint256 buySellTaxFee
+        uint16 transferTaxfee,
+        uint16 buySellTaxFee
     ) external virtual onlyRole(TAX_MANAGER) {
         require(
-            transferTaxfee <= 500,
-            "transferTaxfee can't be greater than 50%"
-        );
-        require(
-            buySellTaxFee <= 500,
-            "buySellTaxFee can't be greater than 50%"
+            transferTaxfee <= MAX_FEE_PERCENT &&
+                buySellTaxFee <= MAX_FEE_PERCENT,
+            "Taxfee can't be greater than 50%"
         );
         _transferTaxfee = transferTaxfee;
         _buySellTaxFee = buySellTaxFee;
@@ -234,23 +234,20 @@ contract TYON_V1 is
         - the caller must be of role TAX_MANAGER.
      */
     function setEcosystemFeePercent(
-        uint256 buySellEcosystemFee,
-        uint256 transferEcosystemFee
+        uint16 buySellEcosystemFee,
+        uint16 transferEcosystemFee
     ) external virtual onlyRole(TAX_MANAGER) {
         require(
-            buySellEcosystemFee <= 500,
-            "buySellEcosystemFee can't be greater than 50%"
-        );
-        require(
-            transferEcosystemFee <= 500,
-            "transferEcosystemFee can't be greater than 50%"
+            buySellEcosystemFee <= MAX_FEE_PERCENT &&
+                transferEcosystemFee <= MAX_FEE_PERCENT,
+            "EcosystemFee can't be greater than 50%"
         );
         _buySellEcosystemFee = buySellEcosystemFee;
         _transferEcosystemFee = transferEcosystemFee;
     }
 
     function setMaxTxPercent(uint256 maxTxPercent) external virtual onlyOwner {
-        require(maxTxPercent < 40, "invalid value");
+        require(maxTxPercent < MAX_TX_PERCENT, "invalid value");
         _maxTxAmount = (_tTotal * (maxTxPercent)) / (10 ** 2);
     }
 
@@ -260,7 +257,8 @@ contract TYON_V1 is
 
     function setCurrentPhase(uint8 phase) external virtual onlyOwner {
         require(phase > 0 && phase < 7, "invalid phase");
-        if (_salePhase != phase) _salePhase = phase;
+        require(_salePhase != phase, "phase already set");
+        _salePhase = phase;
         emit SalePhaseUpdated(phase);
     }
 
@@ -269,7 +267,8 @@ contract TYON_V1 is
         uint8 badgeId
     ) external virtual onlyRole(BADGE_MANAGER) {
         require(badgeId > 0 && badgeId < 7, "invalid id");
-        if (_badge[account] != badgeId) _badge[account] = badgeId;
+        require(_badge[account] != badgeId, "badge already set");
+        _badge[account] = badgeId;
     }
 
     /**
@@ -419,6 +418,10 @@ contract TYON_V1 is
         return true;
     }
 
+    /**
+     * @dev add an account to the excluded list.
+     * @param account The account to be excluded from the reward.
+     */
     function excludeFromReward(address account) public onlyOwner {
         require(!_isExcluded[account], "Account is already excluded");
         if (_rOwned[account] > 0) {
@@ -428,13 +431,17 @@ contract TYON_V1 is
         _excluded.push(account);
     }
 
+    /**
+     * @dev Removes an account from the excluded list.
+     * @param account The account to be included in the reward.
+     */
     function includeInReward(address account) public onlyOwner {
         require(_isExcluded[account], "Account is already included");
         for (uint256 i = 0; i < _excluded.length; i++) {
             if (_excluded[i] == account) {
                 _excluded[i] = _excluded[_excluded.length - 1];
-                _tOwned[account] = 0;
-                _isExcluded[account] = false;
+                delete _tOwned[account];
+                delete _isExcluded[account];
                 _excluded.pop();
                 break;
             }
@@ -485,25 +492,20 @@ contract TYON_V1 is
     function getUserBadge(
         address _address
     ) public view virtual returns (string memory __badge) {
-        if (_badge[_address] == 1) {
-            return "MasterOfCoins";
+        string[7] memory badges = [
+            "not_applicable",
+            "MasterOfCoins",
+            "Pods&Bronns",
+            "Sommeliers",
+            "Vanguards",
+            "Westermen",
+            "Khalasaris"
+        ];
+
+        if (_badge[_address] > 0 && _badge[_address] < badges.length) {
+            return badges[_badge[_address]];
         }
-        if (_badge[_address] == 2) {
-            return "Pods&Bronns";
-        }
-        if (_badge[_address] == 3) {
-            return "Sommeliers";
-        }
-        if (_badge[_address] == 4) {
-            return "Vanguards";
-        }
-        if (_badge[_address] == 5) {
-            return "Westermen";
-        }
-        if (_badge[_address] == 6) {
-            return "Khalasaris";
-        }
-        return "not Applicable";
+        return badges[0];
     }
 
     function isExcludedFromReward(address account) public view returns (bool) {
@@ -528,14 +530,17 @@ contract TYON_V1 is
         uint256 tTaxCutBalance = tTaxCut - (tTaxCutPerWallet * 3);
         uint256 rTaxCutPerWallet = tTaxCutPerWallet * currentRate;
         uint256 rTaxCutBalance = tTaxCutBalance * currentRate;
+
         _rOwned[tyonGrowthX] = _rOwned[tyonGrowthX] + (rTaxCutPerWallet);
         if (_isExcluded[tyonGrowthX]) {
             _tOwned[tyonGrowthX] = _tOwned[tyonGrowthX] + tTaxCutPerWallet;
         }
+
         _rOwned[tyonFundMe] = _rOwned[tyonFundMe] + (rTaxCutPerWallet);
         if (_isExcluded[tyonFundMe]) {
             _tOwned[tyonFundMe] = _tOwned[tyonFundMe] + tTaxCutPerWallet;
         }
+
         _rOwned[tyonEcosystemGrowth] =
             _rOwned[tyonEcosystemGrowth] +
             (rTaxCutPerWallet);
@@ -544,6 +549,7 @@ contract TYON_V1 is
                 _tOwned[tyonEcosystemGrowth] +
                 tTaxCutPerWallet;
         }
+
         _rOwned[tyrionShield] = _rOwned[tyrionShield] + (rTaxCutBalance);
         if (_isExcluded[tyrionShield]) {
             _tOwned[tyrionShield] = _tOwned[tyrionShield] + tTaxCutBalance;
@@ -576,6 +582,7 @@ contract TYON_V1 is
 
         _ecosystemFee = _transferEcosystemFee;
         _taxFee = _transferTaxfee;
+        _tradeFeeEnabled = false;
     }
 
     function restoreAllFee() internal {
