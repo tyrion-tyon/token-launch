@@ -146,18 +146,18 @@ contract TYON_V1 is
         _maxTxAmount = 5000000 * 10 ** 9; // 5000000 TYON
         _minBuysellAmount = 500 * 10 ** 9; // 500 TYON
 
-        // IPancakeRouter02 _pancakeRouter = IPancakeRouter02(
-        //     0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 // pancake router for testnet
-        // );
-        // // Creating a new pancakeswap pair for this new token
-        // pancakePair = IPancakeFactory(_pancakeRouter.factory()).createPair(
-        //     address(this),
-        //     _pancakeRouter.WETH()
-        // );
+        IPancakeRouter02 _pancakeRouter = IPancakeRouter02(
+            0xDE2Db97D54a3c3B008a097B2260633E6cA7DB1AF // pancake router for testnet
+        );
+        // Creating a new pancakeswap pair for this new token
+        pancakePair = IPancakeFactory(_pancakeRouter.factory()).createPair(
+            address(this),
+            _pancakeRouter.WETH()
+        );
 
-        // // set the contract variables
-        // pancakeRouter = _pancakeRouter;
-        // _isLP[pancakePair] = true;
+        // set the contract variables
+        pancakeRouter = _pancakeRouter;
+        _isLP[pancakePair] = true;
 
         // assigning variables
         tyonGrowthX = _growthX;
