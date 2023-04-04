@@ -79,7 +79,9 @@ contract TYON_V1 is
 
     // prevent intialization of logic contract.
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {}
+    constructor() {
+        _disableInitializers();
+    }
 
     /**
      * @dev initialize the token contract. Minting _totalSupply into owner and growthX account.
