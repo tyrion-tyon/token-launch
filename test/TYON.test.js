@@ -465,6 +465,7 @@ contract("TYON_V1 TEST", (accounts) => {
     const fee = await tyon.totalFees();
     assert.equal(fee, 24750000000);
   });
+
   it("allows owner to exclude account from reward", async () => {
     const isExcluded1 = await tyon.isExcludedFromReward(accounts[1]);
     const balance1 = await tyon.balanceOf(accounts[1]);
@@ -479,5 +480,23 @@ contract("TYON_V1 TEST", (accounts) => {
     assert.equal(isExcluded3, false);
     assert.equal(balance2.toString(), balance1.toString());
     assert.equal(balance3.toString(), balance2.toString());
+  });
+
+  it("allows owner to change txFee and it will reflect on transaction", async () => {
+    await tyon.transfer(accounts[3], web3.utils.toWei("10", "gwei"), {
+      from: accounts[2],
+    });
+    const account2Balance1 = await tyon.balanceOf(accounts[2]);
+    const account3Balance1 = await tyon.balanceOf(accounts[3]);
+    await tyon.setTaxFeePercent(10, 20);
+    await tyon.transfer(accounts[3], web3.utils.toWei("10", "gwei"), {
+      from: accounts[2],
+    });
+    const account2Balance2 = await tyon.balanceOf(accounts[2]);
+    const account3Balance2 = await tyon.balanceOf(accounts[3]);
+    assert.equal(account2Balance1.toString(), 72444042377);
+    assert.equal(account3Balance1.toString(), 9950001000);
+    assert.equal(account2Balance2.toString(), 62450981375);
+    assert.equal(account3Balance2.toString(), 19802201244); // credited 9852200244 (9.85 TYON + Reflection)
   });
 });

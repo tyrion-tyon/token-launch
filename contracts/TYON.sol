@@ -134,14 +134,12 @@ contract TYON_V1 is
         _buySellTaxFee = 15; // actual value is 1.5%
 
         _taxFee = _transferTaxfee;
-        _previousTaxFee = _taxFee;
 
         _buySellEcosystemFee = 10; // actaul value 1%. *10 to acomodate value less than 1%
         _transferEcosystemFee = 5; // 0.5%
 
         _tradeFeeEnabled = false;
         _ecosystemFee = _transferEcosystemFee;
-        _previousEcosystemFee = _ecosystemFee;
 
         _salePhase = 1; //initial sale phase.
 
@@ -226,6 +224,7 @@ contract TYON_V1 is
         );
         _transferTaxfee = transferTaxfee;
         _buySellTaxFee = buySellTaxFee;
+        _taxFee = _transferTaxfee;
     }
 
     /**
@@ -246,6 +245,7 @@ contract TYON_V1 is
         );
         _buySellEcosystemFee = buySellEcosystemFee;
         _transferEcosystemFee = transferEcosystemFee;
+        _ecosystemFee = _transferEcosystemFee;
     }
 
     function setMaxTxPercent(uint256 maxTxPercent) external virtual onlyOwner {
