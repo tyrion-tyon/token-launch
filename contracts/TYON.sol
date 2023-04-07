@@ -68,7 +68,7 @@ contract TYON_V1 is
     address[] internal _excluded;
 
     uint8 private constant MAX_TX_PERCENT = 40;
-    uint16 private constant MAX_FEE_PERCENT = 50 * 10; //50% value mul by 10 to avoid precision error
+    uint16 private constant MAX_FEE_PERCENT = 10 * 10; //10% value mul by 10 to avoid precision error
     uint256 private constant MAX = ~uint256(0);
 
     string private _name;
