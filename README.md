@@ -29,6 +29,10 @@ Tyrion is poised to revolutionize the crypto industry by providing volatility-sa
 
   ( NB: Never use the above value, Update the data )
 
+### 1. Deployment with secret mnemonic
+
+---
+
 - Create a .secret file and add your mnemonic.
 
         block chain developer photo scheme wild three attitude clip super man meat
@@ -44,6 +48,34 @@ Tyrion is poised to revolutionize the crypto industry by providing volatility-sa
         $truffle migrate --network binance
 
   ( NB: change network accordingly. [*refer truffle-config.js*] )
+
+- Verify the contract code.
+
+        $truffle run verify TYON_V1 --network binance
+
+### 2. Deployment with truffle dashboard
+
+---
+
+- Initiate truffle dashboard.
+
+        $truffle dashboard
+
+  ( This will open new tab on your browser )
+
+- Connect your metamask wallet with dashboard.
+
+  ( NB: you can connect hardware wallets with metamask)
+
+- Compile the contracts.
+
+        $truffle compile
+
+- Deploy the contract.
+
+        $truffle migrate --network dasboard
+
+  ( sign transaction using the dasboard page )
 
 - Verify the contract code.
 

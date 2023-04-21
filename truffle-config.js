@@ -63,6 +63,24 @@ module.exports = {
       timeoutBlocks: 500, // # of blocks before a deployment times out  (minimum/default: 50)
       skipDryRun: true, // Skip dry run before migrations? (default: false for public nets )
     },
+    binanceMainnet: {
+      provider: () =>
+        new HDWalletProvider({
+          mnemonic: {
+            phrase: mnemonic,
+          },
+          providerOrUrl: binanceTestnetSeed,
+          pollingInterval: 12000,
+        }),
+      network_id: 56,
+      deploymentPollingInterval: 8000,
+      confirmations: 2, // # of confs to wait between deployments. (default: 0)
+      timeoutBlocks: 500, // # of blocks before a deployment times out  (minimum/default: 50)
+      skipDryRun: true, // Skip dry run before migrations? (default: false for public nets )
+    },
+    dashboard: {
+      network_id: 97,
+    },
     // Another network with more advanced options...
     // advanced: {
     // port: 8777,             // Custom port
@@ -90,10 +108,14 @@ module.exports = {
     // }
   },
 
-  // Set default mocha options here, use special reporters etc.
-  mocha: {
-    // timeout: 100000
+  dashboard: {
+    port: 24012,
   },
+
+  // Set default mocha options here, use special reporters etc.
+  // mocha: {
+  //   // timeout: 100000
+  // },
 
   // Configure your compilers
   compilers: {
