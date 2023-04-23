@@ -73,7 +73,7 @@ Tyrion is poised to revolutionize the crypto industry by providing volatility-sa
 
 - Deploy the contract.
 
-        $truffle migrate --network dasboard
+        $truffle migrate --network dashboard
 
   ( sign transaction using the dasboard page )
 
