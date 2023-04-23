@@ -22,7 +22,7 @@ require("dotenv").config();
 const HDWalletProvider = require("@truffle/hdwallet-provider");
 const fs = require("fs");
 const mnemonic = fs.readFileSync(".secret").toString().trim();
-const binanceTestnetSeed = "https://bsc-testnet.public.blastapi.io";
+const binanceTestnetProvider = "https://bsc-testnet.public.blastapi.io";
 
 module.exports = {
   /**
@@ -54,7 +54,7 @@ module.exports = {
           mnemonic: {
             phrase: mnemonic,
           },
-          providerOrUrl: binanceTestnetSeed,
+          providerOrUrl: binanceTestnetProvider,
           pollingInterval: 12000,
         }),
       network_id: 97,
@@ -69,7 +69,7 @@ module.exports = {
           mnemonic: {
             phrase: mnemonic,
           },
-          providerOrUrl: binanceTestnetSeed,
+          providerOrUrl: binanceTestnetProvider,
           pollingInterval: 12000,
         }),
       network_id: 56,
@@ -80,6 +80,10 @@ module.exports = {
     },
     dashboard: {
       network_id: 97,
+      production: true,
+      timeoutBlocks: 500,
+      deploymentPollingInterval: 8000,
+      skipDryRun: false,
     },
     // Another network with more advanced options...
     // advanced: {
