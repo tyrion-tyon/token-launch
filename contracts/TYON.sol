@@ -147,7 +147,7 @@ contract TYON_V1 is
         _minBuysellAmount = 500 * 10 ** 9; // 500 TYON
 
         IPancakeRouter02 _pancakeRouter = IPancakeRouter02(
-            0xDE2Db97D54a3c3B008a097B2260633E6cA7DB1AF // pancake router for testnet
+            0x10ED43C718714eb63d5aA57B78B54704E256024E // pancake router for BSC MAINNET
         );
         // Creating a new pancakeswap pair for this new token
         pancakePair = IPancakeFactory(_pancakeRouter.factory()).createPair(
