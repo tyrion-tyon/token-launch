@@ -119,7 +119,7 @@ contract TYON_V1 is
         address _growthXWallet,
         address _tyrionShieldWallet
     ) internal onlyInitializing {
-        _name = "TYON";
+        _name = "Tyrion Token";
         _symbol = "TYON";
         _decimals = 9;
 
