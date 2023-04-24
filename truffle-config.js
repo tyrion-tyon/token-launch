@@ -79,7 +79,7 @@ module.exports = {
       skipDryRun: true, // Skip dry run before migrations? (default: false for public nets )
     },
     dashboard: {
-      network_id: 97,
+      network_id: 56,
       production: true,
       timeoutBlocks: 500,
       deploymentPollingInterval: 8000,
